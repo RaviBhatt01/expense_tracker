@@ -38,6 +38,9 @@ dependencies:
   get_it: ^8.0.3
   injectable: ^2.5.0
 
+  # Functional programming - Either type
+  dartz: ^0.10.1 
+
   # Code Generation - Immutable classes & states
   freezed_annotation: ^2.4.4
   json_annotation: ^4.9.0
