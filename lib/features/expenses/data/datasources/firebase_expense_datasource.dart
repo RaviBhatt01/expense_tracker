@@ -1,15 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:injectable/injectable.dart';
 import 'expense_datasource.dart';
 import '../models/expense_model.dart';
 
+@LazySingleton(as: ExpenseDatasource)
 class FirebaseExpenseDatasource implements ExpenseDatasource {
   final FirebaseFirestore _firestore;
 
+  FirebaseExpenseDatasource(this._firestore);
   // Collection name in Firestore
   static const String _collection = 'expenses';
-
-  FirebaseExpenseDatasource({FirebaseFirestore? firestore})
-    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   @override
   Future<void> addExpense(ExpenseModel expense) async {

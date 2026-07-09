@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:injectable/injectable.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../entities/expense.dart';
@@ -18,6 +19,7 @@ class GetExpensesParams {
   });
 }
 
+@injectable
 class GetExpensesUseCase implements UseCase<List<Expense>, GetExpensesParams> {
   final ExpenseRepository _repository;
 
