@@ -4,7 +4,9 @@ import '../../domain/entities/expense.dart';
 import '../../domain/repositories/expense_repository.dart';
 import '../datasources/expense_datasource.dart';
 import '../models/expense_model.dart';
+import 'package:injectable/injectable.dart';
 
+@LazySingleton(as: ExpenseRepository)
 class ExpenseRepositoryImpl implements ExpenseRepository {
   final ExpenseDatasource _datasource;
 
