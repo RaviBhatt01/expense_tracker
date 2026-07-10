@@ -26,6 +26,8 @@ import 'package:expense_tracker/features/expenses/domain/usecases/get_expenses.d
     as _i207;
 import 'package:expense_tracker/features/expenses/domain/usecases/update_expense.dart'
     as _i563;
+import 'package:expense_tracker/features/expenses/presentation/cubit/expense_cubit.dart'
+    as _i7;
 import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
 
@@ -57,6 +59,14 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i563.UpdateExpenseUseCase>(
       () =>
           _i563.UpdateExpenseUseCase(repository: gh<_i476.ExpenseRepository>()),
+    );
+    gh.factory<_i7.ExpenseCubit>(
+      () => _i7.ExpenseCubit(
+        addExpense: gh<_i638.AddExpenseUseCase>(),
+        getExpenses: gh<_i207.GetExpensesUseCase>(),
+        updateExpense: gh<_i563.UpdateExpenseUseCase>(),
+        deleteExpense: gh<_i575.DeleteExpenseUseCase>(),
+      ),
     );
     return this;
   }
