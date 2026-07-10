@@ -8,6 +8,7 @@ import 'core/di/injection.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Initialize all dependencies before app starts
   await configureDependencies();
-  runApp(const MyApp());
+  runApp(App());
 }
