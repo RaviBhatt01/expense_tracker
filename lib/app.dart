@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
+import 'core/router/app_router.dart';
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class App extends StatelessWidget {
+  App({super.key});
+
+  // Create router instance — lives at app level
+  // Not inside build() because we don't want it recreated on rebuilds
+  final _router = AppRouter();
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'Expense Tracker',
       debugShowCheckedModeBanner: false,
-      home: Scaffold(body: Center(child: Text('Expense Tracker'))),
+      routerConfig: _router.config(),
     );
   }
 }
