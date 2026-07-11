@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../cubit/expense_cubit.dart';
 import '../cubit/expense_state.dart';
 import '../widgets/expense_summary_card.dart';
@@ -31,7 +33,7 @@ class _HomeView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1E1E2E),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: BlocBuilder<ExpenseCubit, ExpenseState>(
           builder: (context, state) {
@@ -44,34 +46,33 @@ class _HomeView extends StatelessWidget {
                   slivers: [
                     // Header section
                     SliverToBoxAdapter(child: _Header(balance: balance)),
-                    // Summary cards
+                    // Income and expense summary cards
                     SliverToBoxAdapter(
                       child: ExpenseSummaryCard(
                         totalIncome: totalIncome,
                         totalExpenses: totalExpenses,
                       ),
                     ),
-                    // Recent transactions header
+                    // Recent transactions section label
                     const SliverToBoxAdapter(
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(20, 24, 20, 12),
                         child: Text(
                           'Recent Transactions',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: AppTextStyles.sectionTitle,
                         ),
                       ),
                     ),
-                    // Recent transactions list — show last 5 only
+                    // Show only last 5 transactions on home screen
                     RecentTransactionsList(expenses: expenses.take(5).toList()),
                   ],
                 );
               },
               error: (message) => Center(
-                child: Text(message, style: const TextStyle(color: Colors.red)),
+                child: Text(
+                  message,
+                  style: const TextStyle(color: AppColors.expense),
+                ),
               ),
             );
           },
@@ -79,14 +80,14 @@ class _HomeView extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.router.push(const AddExpenseRoute()),
-        backgroundColor: const Color(0xFF6C63FF),
-        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: AppColors.primary,
+        child: const Icon(Icons.add, color: AppColors.iconOnColor),
       ),
     );
   }
 }
 
-// Header widget — greeting and balance display
+// Header showing greeting and current balance
 class _Header extends StatelessWidget {
   final double balance;
 
@@ -99,23 +100,13 @@ class _Header extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Good morning 👋',
-            style: TextStyle(color: Colors.white70, fontSize: 16),
-          ),
+          const Text('Good morning 👋', style: AppTextStyles.greeting),
           const SizedBox(height: 8),
-          const Text(
-            'Your Balance',
-            style: TextStyle(color: Colors.white54, fontSize: 14),
-          ),
+          const Text('Your Balance', style: AppTextStyles.label),
           const SizedBox(height: 4),
           Text(
             'NPR ${balance.toStringAsFixed(2)}',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 36,
-              fontWeight: FontWeight.bold,
-            ),
+            style: AppTextStyles.balanceAmount,
           ),
         ],
       ),

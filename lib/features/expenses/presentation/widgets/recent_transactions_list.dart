@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/entities/expense.dart';
 
 // Displays a scrollable list of recent transactions
-// Receives pre-filtered list from HomePage (last 5)
+// Receives pre-filtered list from HomePage (last 5 only)
 class RecentTransactionsList extends StatelessWidget {
   final List<Expense> expenses;
 
@@ -18,7 +21,7 @@ class RecentTransactionsList extends StatelessWidget {
             child: Text(
               'No transactions yet.\nTap + to add one!',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white54, fontSize: 16),
+              style: AppTextStyles.bodySecondary,
             ),
           ),
         ),
@@ -28,6 +31,9 @@ class RecentTransactionsList extends StatelessWidget {
     return SliverList(
       delegate: SliverChildBuilderDelegate((context, index) {
         final expense = expenses[index];
+
+        // Determine if this is an expense or income
+        // to show correct color and sign
         final isExpense = expense.type == TransactionType.expense;
 
         return Padding(
@@ -35,59 +41,46 @@ class RecentTransactionsList extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF2A2A3E),
+              color: AppColors.surface,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               children: [
-                // Category icon placeholder — will use real icons later
+                // Category icon — will be replaced with real
+                // category icons when we build the categories feature
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF6C63FF).withOpacity(0.2),
+                    color: AppColors.primary.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
                     Icons.receipt_long,
-                    color: Color(0xFF6C63FF),
+                    color: AppColors.primary,
                     size: 20,
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Title and date
+                // Transaction title and date
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        expense.title,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                      Text(expense.title, style: AppTextStyles.cardTitle),
                       const SizedBox(height: 4),
                       Text(
                         '${expense.date.day}/${expense.date.month}/${expense.date.year}',
-                        style: const TextStyle(
-                          color: Colors.white54,
-                          fontSize: 12,
-                        ),
+                        style: AppTextStyles.bodySecondary,
                       ),
                     ],
                   ),
                 ),
-                // Amount — red for expense, green for income
+                // Amount — negative for expense, positive for income
                 Text(
                   '${isExpense ? '-' : '+'}NPR ${expense.amount.toStringAsFixed(0)}',
-                  style: TextStyle(
-                    color: isExpense
-                        ? const Color(0xFFE53935)
-                        : const Color(0xFF4CAF50),
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: isExpense
+                      ? AppTextStyles.expenseAmount
+                      : AppTextStyles.incomeAmount,
                 ),
               ],
             ),
