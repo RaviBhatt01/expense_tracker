@@ -17,11 +17,8 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      // Create cubit from DI and immediately load expenses
-      create: (context) => getIt<ExpenseCubit>()..loadExpenses(),
-      child: const _HomeView(),
-    );
+    // Cubit comes from app level — no BlocProvider needed here
+    return const _HomeView();
   }
 }
 
