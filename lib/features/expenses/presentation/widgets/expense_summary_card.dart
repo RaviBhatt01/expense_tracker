@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
+
 // Shows income and expense totals side by side
 class ExpenseSummaryCard extends StatelessWidget {
   final double totalIncome;
@@ -17,25 +20,23 @@ class ExpenseSummaryCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          // Income card
+          // Income summary
           Expanded(
             child: _SummaryItem(
               label: 'Income',
               amount: totalIncome,
               icon: Icons.arrow_downward,
-              // Green for income
-              color: const Color(0xFF4CAF50),
+              color: AppColors.income,
             ),
           ),
           const SizedBox(width: 16),
-          // Expense card
+          // Expense summary
           Expanded(
             child: _SummaryItem(
               label: 'Expenses',
               amount: totalExpenses,
               icon: Icons.arrow_upward,
-              // Red for expenses
-              color: const Color(0xFFE53935),
+              color: AppColors.expense,
             ),
           ),
         ],
@@ -62,12 +63,12 @@ class _SummaryItem extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        // Slightly lighter than background for card effect
-        color: const Color(0xFF2A2A3E),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
+          // Colored icon with transparent background
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -80,18 +81,11 @@ class _SummaryItem extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                style: const TextStyle(color: Colors.white54, fontSize: 12),
-              ),
+              Text(label, style: AppTextStyles.label),
               const SizedBox(height: 4),
               Text(
                 'NPR ${amount.toStringAsFixed(0)}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AppTextStyles.summaryAmount,
               ),
             ],
           ),
