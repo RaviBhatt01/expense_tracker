@@ -1,5 +1,7 @@
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter/material.dart';
 
+import '../../features/expenses/domain/entities/expense.dart';
 import '../../features/expenses/presentation/pages/add_expense_page.dart';
 import '../../features/expenses/presentation/pages/home_page.dart';
 import '../../features/expenses/presentation/pages/transactions_page.dart';

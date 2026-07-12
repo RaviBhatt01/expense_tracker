@@ -75,7 +75,7 @@ class _HomeView extends StatelessWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.router.push(const AddExpenseRoute()),
+        onPressed: () => context.router.push(AddExpenseRoute()),
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.add, color: AppColors.iconOnColor),
       ),

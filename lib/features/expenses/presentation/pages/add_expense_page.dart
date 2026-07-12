@@ -11,40 +11,64 @@ import '../cubit/expense_state.dart';
 
 @RoutePage()
 class AddExpensePage extends StatelessWidget {
-  const AddExpensePage({super.key});
+  // Optional expense — if provided, we are in edit mode
+  final Expense? expense;
+
+  const AddExpensePage({
+    super.key,
+    this.expense, // null = add mode, non-null = edit mode
+  });
 
   @override
   Widget build(BuildContext context) {
-    // No BlocProvider here — uses cubit from parent
-    return const _AddExpenseView();
+    return _AddExpenseView(expense: expense);
   }
 }
 
 class _AddExpenseView extends StatefulWidget {
-  const _AddExpenseView();
+  final Expense? expense;
+
+  const _AddExpenseView({this.expense});
 
   @override
   State<_AddExpenseView> createState() => _AddExpenseViewState();
 }
 
 class _AddExpenseViewState extends State<_AddExpenseView> {
-  // Form key — used to validate all fields at once
   final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _titleController;
+  late final TextEditingController _amountController;
+  late final TextEditingController _noteController;
 
-  // Controllers — read text field values
-  final _titleController = TextEditingController();
-  final _amountController = TextEditingController();
-  final _noteController = TextEditingController();
-
-  // Local UI state
-  TransactionType _selectedType = TransactionType.expense;
-  DateTime _selectedDate = DateTime.now();
-
-  // Temporary category — will be replaced when categories feature is built
+  late TransactionType _selectedType;
+  late DateTime _selectedDate;
   final String _categoryId = 'general';
 
-  // Clean up controllers when screen is disposed
-  // Important to prevent memory leaks
+  // True when editing an existing expense
+  bool get _isEditMode => widget.expense != null;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // If editing, pre-fill all fields with existing expense data
+    // If adding, start with empty/default values
+    _titleController = TextEditingController(
+      text: widget.expense?.title ?? '',
+    );
+    _amountController = TextEditingController(
+      // Only show amount if editing — empty string for add mode
+      text: widget.expense != null
+          ? widget.expense!.amount.toStringAsFixed(2)
+          : '',
+    );
+    _noteController = TextEditingController(
+      text: widget.expense?.note ?? '',
+    );
+    _selectedType = widget.expense?.type ?? TransactionType.expense;
+    _selectedDate = widget.expense?.date ?? DateTime.now();
+  }
+
   @override
   void dispose() {
     _titleController.dispose();
@@ -53,7 +77,6 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
     super.dispose();
   }
 
-  // Show date picker and update selected date
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
@@ -61,7 +84,6 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
       builder: (context, child) {
-        // Apply dark theme to date picker
         return Theme(
           data: ThemeData.dark().copyWith(
             colorScheme: const ColorScheme.dark(
@@ -74,32 +96,44 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
       },
     );
 
-    // Only update if user actually picked a date (didn't cancel)
     if (picked != null) {
       setState(() => _selectedDate = picked);
     }
   }
 
-  // Validate and submit the form
   void _submit() {
-    // validate() checks all field validators
-    // returns false if any field is invalid
     if (!_formKey.currentState!.validate()) return;
 
-    final expense = Expense(
-      id: '', // will be generated in cubit
-      title: _titleController.text.trim(),
-      amount: double.parse(_amountController.text),
-      type: _selectedType,
-      categoryId: _categoryId,
-      date: _selectedDate,
-      note: _noteController.text.trim().isEmpty
-          ? null
-          : _noteController.text.trim(),
-      createdAt: DateTime.now(), // will be overwritten in cubit
-    );
-
-    context.read<ExpenseCubit>().addExpense(expense);
+    if (_isEditMode) {
+      // EDIT MODE — preserve original id and createdAt
+      // only update fields the user can change
+      final updatedExpense = widget.expense!.copyWith(
+        title: _titleController.text.trim(),
+        amount: double.parse(_amountController.text),
+        type: _selectedType,
+        categoryId: _categoryId,
+        date: _selectedDate,
+        note: _noteController.text.trim().isEmpty
+            ? null
+            : _noteController.text.trim(),
+      );
+      context.read<ExpenseCubit>().updateExpense(updatedExpense);
+    } else {
+      // ADD MODE — create new expense, id generated in cubit
+      final newExpense = Expense(
+        id: '',
+        title: _titleController.text.trim(),
+        amount: double.parse(_amountController.text),
+        type: _selectedType,
+        categoryId: _categoryId,
+        date: _selectedDate,
+        note: _noteController.text.trim().isEmpty
+            ? null
+            : _noteController.text.trim(),
+        createdAt: DateTime.now(),
+      );
+      context.read<ExpenseCubit>().addExpense(newExpense);
+    }
   }
 
   @override
@@ -109,7 +143,11 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
-        title: const Text('Add Transaction', style: AppTextStyles.sectionTitle),
+        // Title changes based on mode
+        title: Text(
+          _isEditMode ? 'Edit Transaction' : 'Add Transaction',
+          style: AppTextStyles.sectionTitle,
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => context.maybePop(),
@@ -118,11 +156,9 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
       body: BlocListener<ExpenseCubit, ExpenseState>(
         listener: (context, state) {
           state.whenOrNull(
-            loaded: (_, __, ___) {
-              // Go back to home — cubit already has fresh data
-              context.maybePop();
-            },
-            error: (message) => ScaffoldMessenger.of(context).showSnackBar(
+            loaded: (_, __, ___) => context.maybePop(),
+            error: (message) =>
+                ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(message),
                 backgroundColor: AppColors.expense,
@@ -140,7 +176,8 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
                 // ── Type Toggle ──────────────────────────────
                 _TypeToggle(
                   selectedType: _selectedType,
-                  onChanged: (type) => setState(() => _selectedType = type),
+                  onChanged: (type) =>
+                      setState(() => _selectedType = type),
                 ),
                 const SizedBox(height: 24),
 
@@ -152,14 +189,14 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  // Only allow valid number input
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(
                       RegExp(r'^\d+\.?\d{0,2}'),
                     ),
                   ],
                   style: const TextStyle(color: AppColors.textPrimary),
-                  decoration: _inputDecoration('0.00', prefixText: 'NPR '),
+                  decoration:
+                      _inputDecoration('0.00', prefixText: 'NPR '),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter an amount';
@@ -170,7 +207,7 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
                     if (double.parse(value) <= 0) {
                       return 'Amount must be greater than 0';
                     }
-                    return null; // null means valid
+                    return null;
                   },
                 ),
                 const SizedBox(height: 20),
@@ -181,7 +218,8 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
                 TextFormField(
                   controller: _titleController,
                   style: const TextStyle(color: AppColors.textPrimary),
-                  decoration: _inputDecoration('e.g. Morning coffee'),
+                  decoration:
+                      _inputDecoration('e.g. Morning coffee'),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'Please enter a title';
@@ -218,7 +256,8 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
                         const SizedBox(width: 12),
                         Text(
                           '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-                          style: const TextStyle(color: AppColors.textPrimary),
+                          style: const TextStyle(
+                              color: AppColors.textPrimary),
                         ),
                       ],
                     ),
@@ -226,7 +265,7 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
                 ),
                 const SizedBox(height: 20),
 
-                // ── Note Field (optional) ────────────────────
+                // ── Note Field ───────────────────────────────
                 _buildLabel('Note (optional)'),
                 const SizedBox(height: 8),
                 TextFormField(
@@ -234,7 +273,6 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
                   style: const TextStyle(color: AppColors.textPrimary),
                   decoration: _inputDecoration('Add a note...'),
                   maxLines: 3,
-                  // No validator — field is optional
                 ),
                 const SizedBox(height: 32),
 
@@ -257,9 +295,12 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
                             ? const CircularProgressIndicator(
                                 color: Colors.white,
                               )
-                            : const Text(
-                                'Save Transaction',
-                                style: TextStyle(
+                            : Text(
+                                // Button label changes based on mode
+                                _isEditMode
+                                    ? 'Update Transaction'
+                                    : 'Save Transaction',
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -277,12 +318,10 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
     );
   }
 
-  // Reusable label widget for form fields
   Widget _buildLabel(String text) {
     return Text(text, style: AppTextStyles.label);
   }
 
-  // Reusable input decoration — keeps all fields consistent
   InputDecoration _inputDecoration(String hint, {String? prefixText}) {
     return InputDecoration(
       hintText: hint,
@@ -300,12 +339,15 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
   }
 }
 
-// Type toggle widget — switches between expense and income
+// Type toggle — expense or income selector
 class _TypeToggle extends StatelessWidget {
   final TransactionType selectedType;
   final ValueChanged<TransactionType> onChanged;
 
-  const _TypeToggle({required this.selectedType, required this.onChanged});
+  const _TypeToggle({
+    required this.selectedType,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -316,7 +358,6 @@ class _TypeToggle extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Expense toggle button
           Expanded(
             child: _ToggleButton(
               label: 'Expense',
@@ -325,7 +366,6 @@ class _TypeToggle extends StatelessWidget {
               onTap: () => onChanged(TransactionType.expense),
             ),
           ),
-          // Income toggle button
           Expanded(
             child: _ToggleButton(
               label: 'Income',
@@ -358,7 +398,6 @@ class _ToggleButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        // Smooth transition when switching between expense/income
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
@@ -370,7 +409,8 @@ class _ToggleButton extends StatelessWidget {
           textAlign: TextAlign.center,
           style: TextStyle(
             color: isSelected ? Colors.white : AppColors.textSecondary,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            fontWeight:
+                isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
       ),
