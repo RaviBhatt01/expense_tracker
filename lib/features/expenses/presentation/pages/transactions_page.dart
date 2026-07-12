@@ -31,7 +31,7 @@ class TransactionsPage extends StatelessWidget {
       ),
       // FAB to add new transaction from this screen too
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.router.push(const AddExpenseRoute()),
+        onPressed: () => context.router.push(AddExpenseRoute()),
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.add, color: AppColors.iconOnColor),
       ),
@@ -45,7 +45,7 @@ class TransactionsPage extends StatelessWidget {
             loaded: (expenses, totalExpenses, totalIncome) {
               if (expenses.isEmpty) {
                 return _EmptyState(
-                  onAddTap: () => context.router.push(const AddExpenseRoute()),
+                  onAddTap: () => context.router.push(AddExpenseRoute()),
                 );
               }
               return _TransactionsList(expenses: expenses);
@@ -183,51 +183,55 @@ class _SwipeToDeleteItem extends StatelessWidget {
         // Our cubit reload will update the list after deletion
         return false;
       },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            // Category icon placeholder
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(10),
+      child: GestureDetector(
+        // Tap the transaction to edit it
+        onTap: () => context.router.push(AddExpenseRoute(expense: expense)),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              // Category icon placeholder
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.receipt_long,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
               ),
-              child: const Icon(
-                Icons.receipt_long,
-                color: AppColors.primary,
-                size: 20,
+              const SizedBox(width: 12),
+              // Title and date
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(expense.title, style: AppTextStyles.cardTitle),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${expense.date.day}/${expense.date.month}/${expense.date.year}',
+                      style: AppTextStyles.bodySecondary,
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            // Title and date
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(expense.title, style: AppTextStyles.cardTitle),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${expense.date.day}/${expense.date.month}/${expense.date.year}',
-                    style: AppTextStyles.bodySecondary,
-                  ),
-                ],
+              // Amount with correct color and sign
+              Text(
+                '${isExpense ? '-' : '+'}NPR ${expense.amount.toStringAsFixed(0)}',
+                style: isExpense
+                    ? AppTextStyles.expenseAmount
+                    : AppTextStyles.incomeAmount,
               ),
-            ),
-            // Amount with correct color and sign
-            Text(
-              '${isExpense ? '-' : '+'}NPR ${expense.amount.toStringAsFixed(0)}',
-              style: isExpense
-                  ? AppTextStyles.expenseAmount
-                  : AppTextStyles.incomeAmount,
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

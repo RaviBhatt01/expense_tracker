@@ -12,18 +12,38 @@ part of 'app_router.dart';
 
 /// generated route for
 /// [AddExpensePage]
-class AddExpenseRoute extends PageRouteInfo<void> {
-  const AddExpenseRoute({List<PageRouteInfo>? children})
-    : super(AddExpenseRoute.name, initialChildren: children);
+class AddExpenseRoute extends PageRouteInfo<AddExpenseRouteArgs> {
+  AddExpenseRoute({Key? key, Expense? expense, List<PageRouteInfo>? children})
+    : super(
+        AddExpenseRoute.name,
+        args: AddExpenseRouteArgs(key: key, expense: expense),
+        initialChildren: children,
+      );
 
   static const String name = 'AddExpenseRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const AddExpensePage();
+      final args = data.argsAs<AddExpenseRouteArgs>(
+        orElse: () => const AddExpenseRouteArgs(),
+      );
+      return AddExpensePage(key: args.key, expense: args.expense);
     },
   );
+}
+
+class AddExpenseRouteArgs {
+  const AddExpenseRouteArgs({this.key, this.expense});
+
+  final Key? key;
+
+  final Expense? expense;
+
+  @override
+  String toString() {
+    return 'AddExpenseRouteArgs{key: $key, expense: $expense}';
+  }
 }
 
 /// generated route for
