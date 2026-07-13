@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/utils/app_constants.dart';
 import '../../domain/entities/expense.dart';
 import '../cubit/expense_cubit.dart';
 import '../cubit/expense_state.dart';
@@ -225,7 +226,7 @@ class _SwipeToDeleteItem extends StatelessWidget {
               ),
               // Amount with correct color and sign
               Text(
-                '${isExpense ? '-' : '+'}NPR ${expense.amount.toStringAsFixed(0)}',
+                '${isExpense ? '-' : '+'}${AppConstants.currency} ${expense.amount.toStringAsFixed(0)}',
                 style: isExpense
                     ? AppTextStyles.expenseAmount
                     : AppTextStyles.incomeAmount,

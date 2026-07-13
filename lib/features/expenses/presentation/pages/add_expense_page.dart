@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/utils/app_constants.dart';
 import '../../domain/entities/expense.dart';
 import '../cubit/expense_cubit.dart';
 import '../cubit/expense_state.dart';
@@ -42,6 +43,8 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
 
   late TransactionType _selectedType;
   late DateTime _selectedDate;
+
+  // TODO: replace with category selector once UI is built
   final String _categoryId = 'general';
 
   // True when editing an existing expense
@@ -53,18 +56,14 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
 
     // If editing, pre-fill all fields with existing expense data
     // If adding, start with empty/default values
-    _titleController = TextEditingController(
-      text: widget.expense?.title ?? '',
-    );
+    _titleController = TextEditingController(text: widget.expense?.title ?? '');
     _amountController = TextEditingController(
       // Only show amount if editing — empty string for add mode
       text: widget.expense != null
           ? widget.expense!.amount.toStringAsFixed(2)
           : '',
     );
-    _noteController = TextEditingController(
-      text: widget.expense?.note ?? '',
-    );
+    _noteController = TextEditingController(text: widget.expense?.note ?? '');
     _selectedType = widget.expense?.type ?? TransactionType.expense;
     _selectedDate = widget.expense?.date ?? DateTime.now();
   }
@@ -157,8 +156,7 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
         listener: (context, state) {
           state.whenOrNull(
             loaded: (_, __, ___) => context.maybePop(),
-            error: (message) =>
-                ScaffoldMessenger.of(context).showSnackBar(
+            error: (message) => ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(message),
                 backgroundColor: AppColors.expense,
@@ -176,8 +174,7 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
                 // ── Type Toggle ──────────────────────────────
                 _TypeToggle(
                   selectedType: _selectedType,
-                  onChanged: (type) =>
-                      setState(() => _selectedType = type),
+                  onChanged: (type) => setState(() => _selectedType = type),
                 ),
                 const SizedBox(height: 24),
 
@@ -195,8 +192,10 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
                     ),
                   ],
                   style: const TextStyle(color: AppColors.textPrimary),
-                  decoration:
-                      _inputDecoration('0.00', prefixText: 'NPR '),
+                  decoration: _inputDecoration(
+                    '0.00',
+                    prefixText: '${AppConstants.currency} ',
+                  ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter an amount';
@@ -218,8 +217,7 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
                 TextFormField(
                   controller: _titleController,
                   style: const TextStyle(color: AppColors.textPrimary),
-                  decoration:
-                      _inputDecoration('e.g. Morning coffee'),
+                  decoration: _inputDecoration('e.g. Morning coffee'),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'Please enter a title';
@@ -256,8 +254,7 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
                         const SizedBox(width: 12),
                         Text(
                           '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-                          style: const TextStyle(
-                              color: AppColors.textPrimary),
+                          style: const TextStyle(color: AppColors.textPrimary),
                         ),
                       ],
                     ),
@@ -344,10 +341,7 @@ class _TypeToggle extends StatelessWidget {
   final TransactionType selectedType;
   final ValueChanged<TransactionType> onChanged;
 
-  const _TypeToggle({
-    required this.selectedType,
-    required this.onChanged,
-  });
+  const _TypeToggle({required this.selectedType, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -409,8 +403,7 @@ class _ToggleButton extends StatelessWidget {
           textAlign: TextAlign.center,
           style: TextStyle(
             color: isSelected ? Colors.white : AppColors.textSecondary,
-            fontWeight:
-                isSelected ? FontWeight.bold : FontWeight.normal,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
       ),

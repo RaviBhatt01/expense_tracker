@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/utils/app_constants.dart';
 import '../../domain/entities/expense.dart';
 
 // Displays a scrollable list of recent transactions
@@ -77,7 +78,7 @@ class RecentTransactionsList extends StatelessWidget {
                 ),
                 // Amount — negative for expense, positive for income
                 Text(
-                  '${isExpense ? '-' : '+'}NPR ${expense.amount.toStringAsFixed(0)}',
+                  '${isExpense ? '-' : '+'}${AppConstants.currency} ${expense.amount.toStringAsFixed(0)}',
                   style: isExpense
                       ? AppTextStyles.expenseAmount
                       : AppTextStyles.incomeAmount,
