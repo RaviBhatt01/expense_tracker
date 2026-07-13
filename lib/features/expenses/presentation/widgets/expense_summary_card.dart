@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/utils/app_constants.dart';
 
 // Shows income and expense totals side by side
 class ExpenseSummaryCard extends StatelessWidget {
@@ -84,7 +85,7 @@ class _SummaryItem extends StatelessWidget {
               Text(label, style: AppTextStyles.label),
               const SizedBox(height: 4),
               Text(
-                'NPR ${amount.toStringAsFixed(0)}',
+                '${AppConstants.currency} ${amount.toStringAsFixed(0)}',
                 style: AppTextStyles.summaryAmount,
               ),
             ],

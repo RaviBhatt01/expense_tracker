@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/utils/app_constants.dart';
 import '../cubit/expense_cubit.dart';
 import '../cubit/expense_state.dart';
 import '../widgets/expense_summary_card.dart';
@@ -101,7 +102,7 @@ class _Header extends StatelessWidget {
           const Text('Your Balance', style: AppTextStyles.label),
           const SizedBox(height: 4),
           Text(
-            'NPR ${balance.toStringAsFixed(2)}',
+            '${AppConstants.currency} ${balance.toStringAsFixed(2)}',
             style: AppTextStyles.balanceAmount,
           ),
         ],
