@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/di/injection.dart';
 import 'core/router/app_router.dart';
+import 'features/expenses/domain/usecases/get_expenses.dart';
+import 'features/expenses/presentation/cubit/analytics_cubit.dart';
 import 'features/expenses/presentation/cubit/category_cubit.dart';
 import 'features/expenses/presentation/cubit/expense_cubit.dart';
 
@@ -30,6 +32,14 @@ class App extends StatelessWidget {
         BlocProvider(
           lazy: false,
           create: (context) => getIt<ExpenseCubit>()..loadExpenses(),
+        ),
+        BlocProvider(
+          // Created manually — needs the same CategoryCubit
+          // instance already provided above in the tree
+          create: (context) => AnalyticsCubit(
+            getExpenses: getIt<GetExpensesUseCase>(),
+            categoryCubit: context.read<CategoryCubit>(),
+          ),
         ),
       ],
       child: MaterialApp.router(
