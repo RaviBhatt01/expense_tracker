@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injectable/injectable.dart';
+import 'package:collection/collection.dart';
 
 import '../../../../core/usecases/usecase.dart';
 import '../../domain/entities/category.dart';
@@ -46,5 +47,14 @@ class CategoryCubit extends Cubit<CategoryState> {
     if (state is! CategoryLoaded) return [];
 
     return state.categories.where((c) => c.type == type).toList();
+  }
+
+  /// Find a single category by its id
+  /// Returns null if not found or state is not loaded
+  Category? getCategoryById(String id) {
+    final state = this.state;
+    if (state is! CategoryLoaded) return null;
+
+    return state.categories.firstWhereOrNull((c) => c.id == id);
   }
 }

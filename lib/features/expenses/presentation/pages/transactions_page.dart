@@ -5,8 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/utils/app_constants.dart';
 import '../../domain/entities/expense.dart';
+import '../cubit/category_cubit.dart';
 import '../cubit/expense_cubit.dart';
 import '../cubit/expense_state.dart';
 
@@ -161,12 +161,17 @@ class _SwipeToDeleteItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final isExpense = expense.type == TransactionType.expense;
 
+    // Look up real category
+    final category = context.read<CategoryCubit>().getCategoryById(
+      expense.categoryId,
+    );
+
+    final color = category?.color ?? AppColors.primary;
+    final iconData = category?.icon ?? Icons.receipt_long;
+
     return Dismissible(
-      // Each item needs a unique key for Dismissible to work
       key: Key(expense.id),
-      // Only allow swipe from right to left
       direction: DismissDirection.endToStart,
-      // Show red delete background when swiping
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
@@ -177,15 +182,11 @@ class _SwipeToDeleteItem extends StatelessWidget {
         ),
         child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
       ),
-      // Confirm before actually dismissing
       confirmDismiss: (_) async {
         _confirmDelete(context, expense);
-        // Return false so Dismissible does not auto-remove the item
-        // Our cubit reload will update the list after deletion
         return false;
       },
       child: GestureDetector(
-        // Tap the transaction to edit it
         onTap: () => context.router.push(AddExpenseRoute(expense: expense)),
         child: Container(
           margin: const EdgeInsets.only(bottom: 12),
@@ -196,40 +197,45 @@ class _SwipeToDeleteItem extends StatelessWidget {
           ),
           child: Row(
             children: [
-              // Category icon placeholder
+              // Real category icon
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.2),
+                  color: color.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(
-                  Icons.receipt_long,
-                  color: AppColors.primary,
-                  size: 20,
-                ),
+                child: Icon(iconData, color: color, size: 20),
               ),
               const SizedBox(width: 12),
-              // Title and date
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(expense.title, style: AppTextStyles.cardTitle),
                     const SizedBox(height: 4),
+                    // Category name under title
                     Text(
-                      '${expense.date.day}/${expense.date.month}/${expense.date.year}',
+                      category?.name ?? 'General',
                       style: AppTextStyles.bodySecondary,
                     ),
                   ],
                 ),
               ),
-              // Amount with correct color and sign
-              Text(
-                '${isExpense ? '-' : '+'}${AppConstants.currency} ${expense.amount.toStringAsFixed(0)}',
-                style: isExpense
-                    ? AppTextStyles.expenseAmount
-                    : AppTextStyles.incomeAmount,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '${isExpense ? '-' : '+'}NPR ${expense.amount.toStringAsFixed(0)}',
+                    style: isExpense
+                        ? AppTextStyles.expenseAmount
+                        : AppTextStyles.incomeAmount,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${expense.date.day}/${expense.date.month}/${expense.date.year}',
+                    style: AppTextStyles.bodySecondary,
+                  ),
+                ],
               ),
             ],
           ),
