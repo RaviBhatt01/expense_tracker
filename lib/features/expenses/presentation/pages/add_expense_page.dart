@@ -9,6 +9,7 @@ import '../../../../core/utils/app_constants.dart';
 import '../../domain/entities/expense.dart';
 import '../cubit/expense_cubit.dart';
 import '../cubit/expense_state.dart';
+import '../widgets/category_picker.dart';
 
 @RoutePage()
 class AddExpensePage extends StatelessWidget {
@@ -44,8 +45,8 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
   late TransactionType _selectedType;
   late DateTime _selectedDate;
 
-  // TODO: replace with category selector once UI is built
-  final String _categoryId = 'general';
+  // null means nothing selected yet
+  String? _selectedCategoryId;
 
   // True when editing an existing expense
   bool get _isEditMode => widget.expense != null;
@@ -53,12 +54,8 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
   @override
   void initState() {
     super.initState();
-
-    // If editing, pre-fill all fields with existing expense data
-    // If adding, start with empty/default values
     _titleController = TextEditingController(text: widget.expense?.title ?? '');
     _amountController = TextEditingController(
-      // Only show amount if editing — empty string for add mode
       text: widget.expense != null
           ? widget.expense!.amount.toStringAsFixed(2)
           : '',
@@ -66,6 +63,9 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
     _noteController = TextEditingController(text: widget.expense?.note ?? '');
     _selectedType = widget.expense?.type ?? TransactionType.expense;
     _selectedDate = widget.expense?.date ?? DateTime.now();
+
+    // Pre-select category when editing existing expense
+    _selectedCategoryId = widget.expense?.categoryId;
   }
 
   @override
@@ -103,14 +103,23 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
 
+    // Ensure a category is selected before submitting
+    if (_selectedCategoryId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a category'),
+          backgroundColor: AppColors.expense,
+        ),
+      );
+      return;
+    }
+
     if (_isEditMode) {
-      // EDIT MODE — preserve original id and createdAt
-      // only update fields the user can change
       final updatedExpense = widget.expense!.copyWith(
         title: _titleController.text.trim(),
         amount: double.parse(_amountController.text),
         type: _selectedType,
-        categoryId: _categoryId,
+        categoryId: _selectedCategoryId!, // use selected category
         date: _selectedDate,
         note: _noteController.text.trim().isEmpty
             ? null
@@ -118,13 +127,12 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
       );
       context.read<ExpenseCubit>().updateExpense(updatedExpense);
     } else {
-      // ADD MODE — create new expense, id generated in cubit
       final newExpense = Expense(
         id: '',
         title: _titleController.text.trim(),
         amount: double.parse(_amountController.text),
         type: _selectedType,
-        categoryId: _categoryId,
+        categoryId: _selectedCategoryId!, // use selected category
         date: _selectedDate,
         note: _noteController.text.trim().isEmpty
             ? null
@@ -174,7 +182,26 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
                 // ── Type Toggle ──────────────────────────────
                 _TypeToggle(
                   selectedType: _selectedType,
-                  onChanged: (type) => setState(() => _selectedType = type),
+                  onChanged: (type) {
+                    setState(() {
+                      _selectedType = type;
+                      // Reset category when switching type
+                      // expense categories don't apply to income and vice versa
+                      _selectedCategoryId = null;
+                    });
+                  },
+                ),
+                const SizedBox(height: 24),
+
+                // ── Category Picker ──────────────────────────
+                _buildLabel('Category'),
+                const SizedBox(height: 8),
+                CategoryPicker(
+                  selectedType: _selectedType,
+                  selectedCategoryId: _selectedCategoryId,
+                  onCategorySelected: (id) {
+                    setState(() => _selectedCategoryId = id);
+                  },
                 ),
                 const SizedBox(height: 24),
 
