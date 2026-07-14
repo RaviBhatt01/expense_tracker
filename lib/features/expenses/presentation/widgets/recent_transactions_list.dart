@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/utils/app_constants.dart';
+import '../../domain/entities/category.dart';
 import '../../domain/entities/expense.dart';
+import '../cubit/category_cubit.dart';
 
-// Displays a scrollable list of recent transactions
-// Receives pre-filtered list from HomePage (last 5 only)
 class RecentTransactionsList extends StatelessWidget {
   final List<Expense> expenses;
 
@@ -32,10 +32,12 @@ class RecentTransactionsList extends StatelessWidget {
     return SliverList(
       delegate: SliverChildBuilderDelegate((context, index) {
         final expense = expenses[index];
-
-        // Determine if this is an expense or income
-        // to show correct color and sign
         final isExpense = expense.type == TransactionType.expense;
+
+        // Look up category from CategoryCubit using categoryId
+        final category = context.read<CategoryCubit>().getCategoryById(
+          expense.categoryId,
+        );
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
@@ -47,47 +49,69 @@ class RecentTransactionsList extends StatelessWidget {
             ),
             child: Row(
               children: [
-                // Category icon — will be replaced with real
-                // category icons when we build the categories feature
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.receipt_long,
-                    color: AppColors.primary,
-                    size: 20,
-                  ),
-                ),
+                // Real category icon — falls back to default if not found
+                _CategoryIcon(category: category),
                 const SizedBox(width: 12),
-                // Transaction title and date
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(expense.title, style: AppTextStyles.cardTitle),
                       const SizedBox(height: 4),
+                      // Show category name under title
                       Text(
-                        '${expense.date.day}/${expense.date.month}/${expense.date.year}',
+                        category?.name ?? 'General',
                         style: AppTextStyles.bodySecondary,
                       ),
                     ],
                   ),
                 ),
-                // Amount — negative for expense, positive for income
-                Text(
-                  '${isExpense ? '-' : '+'}${AppConstants.currency} ${expense.amount.toStringAsFixed(0)}',
-                  style: isExpense
-                      ? AppTextStyles.expenseAmount
-                      : AppTextStyles.incomeAmount,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${isExpense ? '-' : '+'}NPR ${expense.amount.toStringAsFixed(0)}',
+                      style: isExpense
+                          ? AppTextStyles.expenseAmount
+                          : AppTextStyles.incomeAmount,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${expense.date.day}/${expense.date.month}/${expense.date.year}',
+                      style: AppTextStyles.bodySecondary,
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
         );
       }, childCount: expenses.length),
+    );
+  }
+}
+
+// Category icon widget with fallback
+class _CategoryIcon extends StatelessWidget {
+  final Category? category;
+
+  const _CategoryIcon({this.category});
+
+  @override
+  Widget build(BuildContext context) {
+    // Use category color if available, fallback to primary
+    final color = category?.color ?? AppColors.primary;
+
+    // Use category icon if available, fallback to receipt icon
+    final iconData = category?.icon ?? Icons.receipt_long;
+
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Icon(iconData, color: color, size: 20),
     );
   }
 }
