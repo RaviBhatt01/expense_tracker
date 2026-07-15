@@ -17,9 +17,9 @@ class TransactionsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         title: const Text('Transactions', style: AppTextStyles.sectionTitle),
         actions: [
@@ -93,7 +93,7 @@ class _TransactionsList extends StatelessWidget {
     return RefreshIndicator(
       // Pull down to reload from Firebase
       color: AppColors.primary,
-      backgroundColor: AppColors.surface,
+      backgroundColor: Theme.of(context).cardColor,
       onRefresh: () => context.read<ExpenseCubit>().loadExpenses(),
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -115,7 +115,7 @@ class _TransactionsList extends StatelessWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: AppColors.surface,
+        backgroundColor: Theme.of(context).cardColor,
         title: const Text(
           'Delete Transaction',
           style: AppTextStyles.sectionTitle,
@@ -192,7 +192,7 @@ class _SwipeToDeleteItem extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -216,7 +216,7 @@ class _SwipeToDeleteItem extends StatelessWidget {
                     // Category name under title
                     Text(
                       category?.name ?? 'General',
-                      style: AppTextStyles.bodySecondary,
+                      style: AppTextStyles.cardSubTitle,
                     ),
                   ],
                 ),
@@ -248,7 +248,7 @@ class _SwipeToDeleteItem extends StatelessWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: AppColors.surface,
+        backgroundColor: Theme.of(context).cardColor,
         title: const Text(
           'Delete Transaction',
           style: AppTextStyles.sectionTitle,

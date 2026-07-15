@@ -95,7 +95,9 @@ class _CategoryChip extends StatelessWidget {
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           // Selected → colored background, not selected → surface
-          color: isSelected ? color.withOpacity(0.2) : AppColors.surface,
+          color: isSelected
+              ? color.withOpacity(0.2)
+              : Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             // Selected → colored border, not selected → transparent
