@@ -23,7 +23,7 @@ class MainPage extends StatelessWidget {
         final tabsRouter = AutoTabsRouter.of(context);
 
         return Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           // child is the currently active tab's screen
           body: child,
           bottomNavigationBar: _BottomNav(
@@ -48,17 +48,19 @@ class _BottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
         // Subtle top border to separate from content
-        border: Border(top: BorderSide(color: AppColors.divider, width: 0.5)),
+        border: const Border(
+          top: BorderSide(color: AppColors.divider, width: 0.5),
+        ),
       ),
       child: BottomNavigationBar(
         currentIndex: activeIndex,
         onTap: onTap,
-        backgroundColor: AppColors.surface,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textSecondary,
+        backgroundColor: Theme.of(context).cardColor,
+        // selectedItemColor: AppColors.primary,
+        // unselectedItemColor: AppColors.textSecondary,
         type: BottomNavigationBarType.fixed,
         // fixed type shows all labels always
         // shifting type only shows label for selected item

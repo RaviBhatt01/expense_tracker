@@ -44,7 +44,7 @@ class RecentTransactionsList extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -61,7 +61,7 @@ class RecentTransactionsList extends StatelessWidget {
                       // Show category name under title
                       Text(
                         category?.name ?? 'General',
-                        style: AppTextStyles.bodySecondary,
+                        style: AppTextStyles.cardSubTitle,
                       ),
                     ],
                   ),

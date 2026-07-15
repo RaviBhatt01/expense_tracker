@@ -85,9 +85,9 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
       builder: (context, child) {
         return Theme(
           data: ThemeData.dark().copyWith(
-            colorScheme: const ColorScheme.dark(
+            colorScheme: ColorScheme.dark(
               primary: AppColors.primary,
-              surface: AppColors.surface,
+              surface: Theme.of(context).cardColor,
             ),
           ),
           child: child!,
@@ -146,9 +146,9 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         // Title changes based on mode
         title: Text(
@@ -374,7 +374,7 @@ class _TypeToggle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(

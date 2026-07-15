@@ -29,9 +29,9 @@ class _AnalyticsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         title: const Text('Analytics', style: AppTextStyles.sectionTitle),
       ),
@@ -155,13 +155,15 @@ class _PeriodFilter extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   // Selected → primary color, not selected → surface
-                  color: isSelected ? AppColors.primary : AppColors.surface,
+                  color: isSelected
+                      ? AppColors.primary
+                      : Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   label,
-                  style: TextStyle(
-                    color: isSelected ? Colors.white : AppColors.textSecondary,
+                  style: AppTextStyles.cardSubTitle.copyWith(
+                    color: isSelected ? Colors.white : Colors.black,
                     fontSize: 13,
                     fontWeight: isSelected
                         ? FontWeight.bold
@@ -196,7 +198,7 @@ class _SummarySection extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -315,7 +317,7 @@ class _CategoryRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
