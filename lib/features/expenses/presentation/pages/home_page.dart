@@ -76,6 +76,7 @@ class _HomeView extends StatelessWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'home_fab',
         onPressed: () => context.router.push(AddExpenseRoute()),
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.add, color: AppColors.iconOnColor),
