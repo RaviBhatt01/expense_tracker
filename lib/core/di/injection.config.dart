@@ -11,26 +11,40 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:cloud_firestore/cloud_firestore.dart' as _i974;
 import 'package:expense_tracker/core/di/register_module.dart' as _i90;
+import 'package:expense_tracker/features/expenses/data/datasources/budget_datasource.dart'
+    as _i199;
 import 'package:expense_tracker/features/expenses/data/datasources/category_datasource.dart'
     as _i185;
 import 'package:expense_tracker/features/expenses/data/datasources/expense_datasource.dart'
     as _i576;
+import 'package:expense_tracker/features/expenses/data/datasources/firebase_budget_datasource.dart'
+    as _i1016;
 import 'package:expense_tracker/features/expenses/data/datasources/firebase_category_datasource.dart'
     as _i831;
 import 'package:expense_tracker/features/expenses/data/datasources/firebase_expense_datasource.dart'
     as _i153;
+import 'package:expense_tracker/features/expenses/data/repositories/budget_repository_impl.dart'
+    as _i847;
 import 'package:expense_tracker/features/expenses/data/repositories/category_repository_impl.dart'
     as _i1043;
 import 'package:expense_tracker/features/expenses/data/repositories/expense_repository_impl.dart'
     as _i165;
+import 'package:expense_tracker/features/expenses/domain/repositories/budget_repository.dart'
+    as _i706;
 import 'package:expense_tracker/features/expenses/domain/repositories/category_repository.dart'
     as _i628;
 import 'package:expense_tracker/features/expenses/domain/repositories/expense_repository.dart'
     as _i476;
+import 'package:expense_tracker/features/expenses/domain/usecases/add_budget.dart'
+    as _i608;
 import 'package:expense_tracker/features/expenses/domain/usecases/add_expense.dart'
     as _i638;
+import 'package:expense_tracker/features/expenses/domain/usecases/delete_budget.dart'
+    as _i256;
 import 'package:expense_tracker/features/expenses/domain/usecases/delete_expense.dart'
     as _i575;
+import 'package:expense_tracker/features/expenses/domain/usecases/get_budgets.dart'
+    as _i21;
 import 'package:expense_tracker/features/expenses/domain/usecases/get_categories.dart'
     as _i1007;
 import 'package:expense_tracker/features/expenses/domain/usecases/get_expenses.dart'
@@ -61,6 +75,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i185.CategoryDatasource>(
       () => _i831.FirebaseCategoryDatasource(gh<_i974.FirebaseFirestore>()),
     );
+    gh.lazySingleton<_i199.BudgetDatasource>(
+      () => _i1016.FirebaseBudgetDatasource(gh<_i974.FirebaseFirestore>()),
+    );
     gh.lazySingleton<_i628.CategoryRepository>(
       () => _i1043.CategoryRepositoryImpl(
         datasource: gh<_i185.CategoryDatasource>(),
@@ -70,6 +87,19 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i165.ExpenseRepositoryImpl(
         datasource: gh<_i576.ExpenseDatasource>(),
       ),
+    );
+    gh.lazySingleton<_i706.BudgetRepository>(
+      () =>
+          _i847.BudgetRepositoryImpl(datasource: gh<_i199.BudgetDatasource>()),
+    );
+    gh.factory<_i21.GetBudgetsUseCase>(
+      () => _i21.GetBudgetsUseCase(repository: gh<_i706.BudgetRepository>()),
+    );
+    gh.factory<_i608.AddBudgetUseCase>(
+      () => _i608.AddBudgetUseCase(repository: gh<_i706.BudgetRepository>()),
+    );
+    gh.factory<_i256.DeleteBudgetUseCase>(
+      () => _i256.DeleteBudgetUseCase(repository: gh<_i706.BudgetRepository>()),
     );
     gh.factory<_i638.AddExpenseUseCase>(
       () => _i638.AddExpenseUseCase(repository: gh<_i476.ExpenseRepository>()),
