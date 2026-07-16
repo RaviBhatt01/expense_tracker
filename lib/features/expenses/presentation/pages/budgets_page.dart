@@ -32,12 +32,12 @@ class _BudgetsView extends StatelessWidget {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Budgets', style: AppTextStyles.sectionTitle),
-      ),
-      // FAB to add new budget
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddBudgetSheet(context),
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add, color: Colors.white),
+        actions: [
+          IconButton(
+            onPressed: () => _showAddBudgetSheet(context),
+            icon: const Icon(Icons.add),
+          ),
+        ],
       ),
       body: BlocBuilder<BudgetCubit, BudgetState>(
         builder: (context, state) {

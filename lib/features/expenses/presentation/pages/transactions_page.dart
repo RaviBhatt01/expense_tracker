@@ -27,6 +27,7 @@ class TransactionsPage extends StatelessWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'transactions_fab',
         onPressed: () => context.router.push(AddExpenseRoute()),
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.add, color: AppColors.iconOnColor),
