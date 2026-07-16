@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
+import 'package:collection/collection.dart';
 
 import '../../domain/entities/expense.dart';
 import '../../domain/usecases/add_expense.dart';
@@ -15,6 +16,10 @@ class ExpenseCubit extends Cubit<ExpenseState> {
   final GetExpensesUseCase _getExpenses;
   final UpdateExpenseUseCase _updateExpense;
   final DeleteExpenseUseCase _deleteExpense;
+
+  // Holds the last deleted expense for undo functionality
+  Expense? _lastDeletedExpense;
+  bool _undoRequested = false;
 
   ExpenseCubit({
     required AddExpenseUseCase addExpense,
@@ -81,12 +86,75 @@ class ExpenseCubit extends Cubit<ExpenseState> {
   }
 
   Future<void> deleteExpense(String id) async {
-    final result = await _deleteExpense(id);
+    final currentState = state;
+    if (currentState is! ExpenseLoaded) return;
 
-    result.fold(
-      (failure) => emit(ExpenseState.error(message: failure.message)),
-      (_) => loadExpenses(),
+    // Save before removing
+    _lastDeletedExpense = currentState.expenses.firstWhereOrNull(
+      (e) => e.id == id,
     );
+
+    if (_lastDeletedExpense == null) return;
+
+    // Remove from UI immediately — optimistic update
+    // User sees it gone instantly without waiting for Firebase
+    final updatedExpenses = currentState.expenses
+        .where((e) => e.id != id)
+        .toList();
+
+    emit(
+      ExpenseState.loaded(
+        expenses: updatedExpenses,
+        totalExpenses: _calculateTotal(
+          updatedExpenses,
+          TransactionType.expense,
+        ),
+        totalIncome: _calculateTotal(updatedExpenses, TransactionType.income),
+      ),
+    );
+
+    // Reset undo flag
+    _undoRequested = false;
+
+    // Wait 6 seconds — same as snackbar duration
+    await Future.delayed(const Duration(seconds: 6));
+
+    // Only delete from Firebase if user did NOT tap undo
+    if (!_undoRequested) {
+      await _deleteExpense(id);
+      _lastDeletedExpense = null;
+    }
+  }
+
+  Future<void> undoDelete() async {
+    if (_lastDeletedExpense == null) return;
+
+    // Flag that undo was requested — prevents Firebase delete
+    _undoRequested = true;
+
+    final expenseToRestore = _lastDeletedExpense!;
+    _lastDeletedExpense = null;
+
+    // Add back to current state immediately
+    final currentState = state;
+    if (currentState is ExpenseLoaded) {
+      final restoredExpenses = [...currentState.expenses, expenseToRestore]
+        ..sort((a, b) => b.date.compareTo(a.date));
+
+      emit(
+        ExpenseState.loaded(
+          expenses: restoredExpenses,
+          totalExpenses: _calculateTotal(
+            restoredExpenses,
+            TransactionType.expense,
+          ),
+          totalIncome: _calculateTotal(
+            restoredExpenses,
+            TransactionType.income,
+          ),
+        ),
+      );
+    }
   }
 
   double _calculateTotal(List<Expense> expenses, TransactionType type) {

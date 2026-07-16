@@ -261,7 +261,7 @@ class _AddBudgetSheetState extends State<_AddBudgetSheet> {
       period: _selectedPeriod,
     );
 
-    Navigator.pop(context);
+    context.router.maybePop(context);
   }
 
   @override
