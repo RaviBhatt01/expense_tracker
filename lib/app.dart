@@ -9,6 +9,11 @@ import 'package:expense_tracker/features/expenses/presentation/cubit/expense_cub
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'features/expenses/domain/usecases/add_budget.dart';
+import 'features/expenses/domain/usecases/delete_budget.dart';
+import 'features/expenses/domain/usecases/get_budgets.dart';
+import 'features/expenses/presentation/cubit/budget_cubit.dart';
+
 class App extends StatelessWidget {
   App({super.key});
 
@@ -30,6 +35,15 @@ class App extends StatelessWidget {
         ),
         BlocProvider(
           create: (context) => AnalyticsCubit(
+            getExpenses: getIt<GetExpensesUseCase>(),
+            categoryCubit: context.read<CategoryCubit>(),
+          ),
+        ),
+        BlocProvider(
+          create: (context) => BudgetCubit(
+            getBudgets: getIt<GetBudgetsUseCase>(),
+            addBudget: getIt<AddBudgetUseCase>(),
+            deleteBudget: getIt<DeleteBudgetUseCase>(),
             getExpenses: getIt<GetExpensesUseCase>(),
             categoryCubit: context.read<CategoryCubit>(),
           ),
