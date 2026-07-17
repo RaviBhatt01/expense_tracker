@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/utils/currency_formatter.dart';
 import '../cubit/analytics_cubit.dart';
 import '../cubit/analytics_state.dart';
 
@@ -341,7 +342,7 @@ class _CategoryRow extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'NPR ${item.amount.toStringAsFixed(0)}',
+                  CurrencyFormatter.format(item.amount),
                   style: AppTextStyles.cardTitle,
                 ),
                 const SizedBox(width: 8),
