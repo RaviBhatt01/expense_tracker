@@ -40,35 +40,55 @@ class _HomeView extends StatelessWidget {
               loading: () => const Center(child: CircularProgressIndicator()),
               loaded: (expenses, totalExpenses, totalIncome) {
                 final balance = totalIncome - totalExpenses;
-                return CustomScrollView(
-                  slivers: [
-                    // Header section
-                    SliverToBoxAdapter(child: _Header(balance: balance)),
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    context.read<ExpenseCubit>().loadExpenses();
+                  },
+                  child: CustomScrollView(
+                    slivers: [
+                      // Header section
+                      SliverToBoxAdapter(child: _Header(balance: balance)),
 
-                    // Income and expense summary cards
-                    SliverToBoxAdapter(
-                      child: ExpenseSummaryCard(
-                        totalIncome: totalIncome,
-                        totalExpenses: totalExpenses,
-                      ),
-                    ),
-
-                    // Budget alert card
-                    SliverToBoxAdapter(child: BudgetAlertCard()),
-
-                    // Recent transactions section label
-                    const SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(20, 24, 20, 12),
-                        child: Text(
-                          'Recent Transactions',
-                          style: AppTextStyles.sectionTitle,
+                      // Income and expense summary cards
+                      SliverToBoxAdapter(
+                        child: ExpenseSummaryCard(
+                          totalIncome: totalIncome,
+                          totalExpenses: totalExpenses,
                         ),
                       ),
-                    ),
-                    // Show only last 5 transactions on home screen
-                    RecentTransactionsList(expenses: expenses.take(5).toList()),
-                  ],
+
+                      // Budget alert card
+                      SliverToBoxAdapter(child: BudgetAlertCard()),
+
+                      // Recent transactions section label
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+                          child: Row(
+                            children: [
+                              const Text(
+                                'Recent Transactions',
+                                style: AppTextStyles.sectionTitle,
+                              ),
+                              const Spacer(),
+                              TextButton(
+                                onPressed: () {
+                                  context.router.push(
+                                    const TransactionsRoute(),
+                                  );
+                                },
+                                child: const Text('View All'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      // Show only last 5 transactions on home screen
+                      RecentTransactionsList(
+                        expenses: expenses.take(5).toList(),
+                      ),
+                    ],
+                  ),
                 );
               },
               error: (message) => Center(
