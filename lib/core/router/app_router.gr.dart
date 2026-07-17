@@ -127,6 +127,59 @@ class SettingsRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [TransactionDetailPage]
+class TransactionDetailRoute extends PageRouteInfo<TransactionDetailRouteArgs> {
+  TransactionDetailRoute({
+    Key? key,
+    required Expense expense,
+    List<PageRouteInfo>? children,
+  }) : super(
+         TransactionDetailRoute.name,
+         args: TransactionDetailRouteArgs(key: key, expense: expense),
+         initialChildren: children,
+       );
+
+  static const String name = 'TransactionDetailRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<TransactionDetailRouteArgs>();
+      return TransactionDetailPage(key: args.key, expense: args.expense);
+    },
+  );
+}
+
+class TransactionDetailRouteArgs {
+  const TransactionDetailRouteArgs({this.key, required this.expense});
+
+  final Key? key;
+
+  final Expense expense;
+
+  @override
+  String toString() {
+    return 'TransactionDetailRouteArgs{key: $key, expense: $expense}';
+  }
+}
+
+/// generated route for
+/// [TransactionsListPage]
+class TransactionsListRoute extends PageRouteInfo<void> {
+  const TransactionsListRoute({List<PageRouteInfo>? children})
+    : super(TransactionsListRoute.name, initialChildren: children);
+
+  static const String name = 'TransactionsListRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const TransactionsListPage();
+    },
+  );
+}
+
+/// generated route for
 /// [TransactionsPage]
 class TransactionsRoute extends PageRouteInfo<void> {
   const TransactionsRoute({List<PageRouteInfo>? children})
