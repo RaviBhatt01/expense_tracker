@@ -44,54 +44,59 @@ class _AnalyticsView extends StatelessWidget {
               child: CircularProgressIndicator(color: AppColors.primary),
             ),
             loaded: (expenses, totalExpenses, totalIncome, breakdown, period) {
-              return CustomScrollView(
-                slivers: [
-                  // Period filter chips
-                  SliverToBoxAdapter(
-                    child: _PeriodFilter(selectedPeriod: period),
-                  ),
-                  // Summary cards
-                  SliverToBoxAdapter(
-                    child: _SummarySection(
-                      totalExpenses: totalExpenses,
-                      totalIncome: totalIncome,
+              return RefreshIndicator(
+                onRefresh: () async {
+                  context.read<AnalyticsCubit>().loadAnalytics();
+                },
+                child: CustomScrollView(
+                  slivers: [
+                    // Period filter chips
+                    SliverToBoxAdapter(
+                      child: _PeriodFilter(selectedPeriod: period),
                     ),
-                  ),
-                  // Donut chart
-                  SliverToBoxAdapter(child: _DonutChart(breakdown: breakdown)),
-                  // Category breakdown list
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-                      child: const Text(
-                        'Spending by Category',
-                        style: AppTextStyles.sectionTitle,
+                    // Summary cards
+                    SliverToBoxAdapter(
+                      child: _SummarySection(
+                        totalExpenses: totalExpenses,
+                        totalIncome: totalIncome,
                       ),
                     ),
-                  ),
-                  if (breakdown.isEmpty)
-                    const SliverToBoxAdapter(
-                      child: Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(40),
-                          child: Text(
-                            'No expense data for this period',
-                            style: AppTextStyles.bodySecondary,
+                    // Donut chart
+                    SliverToBoxAdapter(child: _DonutChart(breakdown: breakdown)),
+                    // Category breakdown list
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+                        child: const Text(
+                          'Spending by Category',
+                          style: AppTextStyles.sectionTitle,
+                        ),
+                      ),
+                    ),
+                    if (breakdown.isEmpty)
+                      const SliverToBoxAdapter(
+                        child: Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(40),
+                            child: Text(
+                              'No expense data for this period',
+                              style: AppTextStyles.bodySecondary,
+                            ),
                           ),
                         ),
-                      ),
-                    )
-                  else
-                    SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) => _CategoryRow(
-                          item: breakdown[index],
-                          totalExpenses: totalExpenses,
+                      )
+                    else
+                      SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) => _CategoryRow(
+                            item: breakdown[index],
+                            totalExpenses: totalExpenses,
+                          ),
+                          childCount: breakdown.length,
                         ),
-                        childCount: breakdown.length,
                       ),
-                    ),
-                ],
+                  ],
+                ),
               );
             },
             error: (message) => Center(

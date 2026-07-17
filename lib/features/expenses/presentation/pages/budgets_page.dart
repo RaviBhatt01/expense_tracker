@@ -53,12 +53,17 @@ class _BudgetsView extends StatelessWidget {
                   onAddTap: () => _showAddBudgetSheet(context),
                 );
               }
-              return ListView.builder(
-                padding: const EdgeInsets.all(20),
-                itemCount: budgets.length,
-                itemBuilder: (context, index) {
-                  return _BudgetCard(item: budgets[index]);
+              return RefreshIndicator(
+                onRefresh: () async {
+                  context.read<BudgetCubit>().loadBudgets();
                 },
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(20),
+                  itemCount: budgets.length,
+                  itemBuilder: (context, index) {
+                    return _BudgetCard(item: budgets[index]);
+                  },
+                ),
               );
             },
             error: (message) => Center(
