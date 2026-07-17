@@ -40,13 +40,14 @@ class App extends StatelessWidget {
           ),
         ),
         BlocProvider(
+          lazy: false,
           create: (context) => BudgetCubit(
             getBudgets: getIt<GetBudgetsUseCase>(),
             addBudget: getIt<AddBudgetUseCase>(),
             deleteBudget: getIt<DeleteBudgetUseCase>(),
             getExpenses: getIt<GetExpensesUseCase>(),
             categoryCubit: context.read<CategoryCubit>(),
-          ),
+          )..loadBudgets(),
         ),
       ],
       // BlocBuilder listens to ThemeCubit
