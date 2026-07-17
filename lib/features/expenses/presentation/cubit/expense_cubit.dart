@@ -1,13 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
-import 'package:collection/collection.dart';
 
 import '../../domain/entities/expense.dart';
 import '../../domain/usecases/add_expense.dart';
+import '../../domain/usecases/delete_expense.dart';
 import '../../domain/usecases/get_expenses.dart';
 import '../../domain/usecases/update_expense.dart';
-import '../../domain/usecases/delete_expense.dart';
 import 'expense_state.dart';
 
 @injectable
@@ -17,9 +17,22 @@ class ExpenseCubit extends Cubit<ExpenseState> {
   final UpdateExpenseUseCase _updateExpense;
   final DeleteExpenseUseCase _deleteExpense;
 
-  // Holds the last deleted expense for undo functionality
+  // Full unfiltered list — source of truth for filtering
+  List<Expense> _allExpenses = [];
+
+  // Undo delete state
   Expense? _lastDeletedExpense;
   bool _undoRequested = false;
+
+  // Current search and filter state
+  String _searchQuery = '';
+  TransactionType? _filterType;
+  String? _filterCategoryId;
+
+  // Expose current filter state for UI to read
+  TransactionType? get currentFilterType => _filterType;
+  String? get currentFilterCategoryId => _filterCategoryId;
+  String get currentSearchQuery => _searchQuery;
 
   ExpenseCubit({
     required AddExpenseUseCase addExpense,
@@ -32,37 +45,88 @@ class ExpenseCubit extends Cubit<ExpenseState> {
        _deleteExpense = deleteExpense,
        super(const ExpenseState.initial());
 
-  Future<void> loadExpenses({
-    TransactionType? type,
-    String? categoryId,
-    DateTime? startDate,
-    DateTime? endDate,
-  }) async {
+  Future<void> loadExpenses() async {
     emit(const ExpenseState.loading());
 
-    final result = await _getExpenses(
-      GetExpensesParams(
-        type: type,
-        categoryId: categoryId,
-        startDate: startDate,
-        endDate: endDate,
-      ),
-    );
+    final result = await _getExpenses(GetExpensesParams());
 
     result.fold(
       (failure) => emit(ExpenseState.error(message: failure.message)),
-      (expenses) => emit(
-        ExpenseState.loaded(
-          expenses: expenses,
-          totalExpenses: _calculateTotal(expenses, TransactionType.expense),
-          totalIncome: _calculateTotal(expenses, TransactionType.income),
-        ),
+      (expenses) {
+        // Store full list
+        _allExpenses = expenses;
+        // Apply any existing filters
+        _emitFiltered();
+      },
+    );
+  }
+
+  /// Search by title — filters in memory, no Firebase call
+  void search(String query) {
+    _searchQuery = query.toLowerCase().trim();
+    _emitFiltered();
+  }
+
+  /// Filter by transaction type
+  void filterByType(TransactionType? type) {
+    _filterType = type;
+    _emitFiltered();
+  }
+
+  /// Filter by category
+  void filterByCategory(String? categoryId) {
+    _filterCategoryId = categoryId;
+    _emitFiltered();
+  }
+
+  /// Clear all search and filters
+  void clearFilters() {
+    _searchQuery = '';
+    _filterType = null;
+    _filterCategoryId = null;
+    _emitFiltered();
+  }
+
+  /// Returns true if any filter or search is active
+  bool get hasActiveFilters =>
+      _searchQuery.isNotEmpty ||
+      _filterType != null ||
+      _filterCategoryId != null;
+
+  /// Apply all active filters and search to _allExpenses
+  /// and emit new state
+  void _emitFiltered() {
+    var filtered = List<Expense>.from(_allExpenses);
+
+    // Apply search filter
+    if (_searchQuery.isNotEmpty) {
+      filtered = filtered
+          .where((e) => e.title.toLowerCase().contains(_searchQuery))
+          .toList();
+    }
+
+    // Apply type filter
+    if (_filterType != null) {
+      filtered = filtered.where((e) => e.type == _filterType).toList();
+    }
+
+    // Apply category filter
+    if (_filterCategoryId != null) {
+      filtered = filtered
+          .where((e) => e.categoryId == _filterCategoryId)
+          .toList();
+    }
+
+    emit(
+      ExpenseState.loaded(
+        expenses: filtered,
+        totalExpenses: _calculateTotal(filtered, TransactionType.expense),
+        totalIncome: _calculateTotal(filtered, TransactionType.income),
       ),
     );
   }
 
   Future<void> addExpense(Expense expense) async {
-    // Keep everything the form gave us, just add id and createdAt
     final newExpense = expense.copyWith(
       id: FirebaseFirestore.instance.collection('expenses').doc().id,
       createdAt: DateTime.now(),
@@ -89,37 +153,16 @@ class ExpenseCubit extends Cubit<ExpenseState> {
     final currentState = state;
     if (currentState is! ExpenseLoaded) return;
 
-    // Save before removing
-    _lastDeletedExpense = currentState.expenses.firstWhereOrNull(
-      (e) => e.id == id,
-    );
-
+    _lastDeletedExpense = _allExpenses.firstWhereOrNull((e) => e.id == id);
     if (_lastDeletedExpense == null) return;
 
-    // Remove from UI immediately — optimistic update
-    // User sees it gone instantly without waiting for Firebase
-    final updatedExpenses = currentState.expenses
-        .where((e) => e.id != id)
-        .toList();
-
-    emit(
-      ExpenseState.loaded(
-        expenses: updatedExpenses,
-        totalExpenses: _calculateTotal(
-          updatedExpenses,
-          TransactionType.expense,
-        ),
-        totalIncome: _calculateTotal(updatedExpenses, TransactionType.income),
-      ),
-    );
-
-    // Reset undo flag
+    // Optimistic update — remove from both lists
+    _allExpenses = _allExpenses.where((e) => e.id != id).toList();
     _undoRequested = false;
+    _emitFiltered();
 
-    // Wait 6 seconds — same as snackbar duration
     await Future.delayed(const Duration(seconds: 6));
 
-    // Only delete from Firebase if user did NOT tap undo
     if (!_undoRequested) {
       await _deleteExpense(id);
       _lastDeletedExpense = null;
@@ -129,32 +172,15 @@ class ExpenseCubit extends Cubit<ExpenseState> {
   Future<void> undoDelete() async {
     if (_lastDeletedExpense == null) return;
 
-    // Flag that undo was requested — prevents Firebase delete
     _undoRequested = true;
-
     final expenseToRestore = _lastDeletedExpense!;
     _lastDeletedExpense = null;
 
-    // Add back to current state immediately
-    final currentState = state;
-    if (currentState is ExpenseLoaded) {
-      final restoredExpenses = [...currentState.expenses, expenseToRestore]
-        ..sort((a, b) => b.date.compareTo(a.date));
+    // Restore to full list and re-sort
+    _allExpenses = [..._allExpenses, expenseToRestore]
+      ..sort((a, b) => b.date.compareTo(a.date));
 
-      emit(
-        ExpenseState.loaded(
-          expenses: restoredExpenses,
-          totalExpenses: _calculateTotal(
-            restoredExpenses,
-            TransactionType.expense,
-          ),
-          totalIncome: _calculateTotal(
-            restoredExpenses,
-            TransactionType.income,
-          ),
-        ),
-      );
-    }
+    _emitFiltered();
   }
 
   double _calculateTotal(List<Expense> expenses, TransactionType type) {
