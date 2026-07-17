@@ -13,8 +13,21 @@ import '../cubit/expense_cubit.dart';
 import '../cubit/expense_state.dart';
 
 @RoutePage()
-class TransactionsListPage extends StatelessWidget {
+class TransactionsListPage extends StatefulWidget {
   const TransactionsListPage({super.key});
+
+  @override
+  State<TransactionsListPage> createState() => _TransactionsListPageState();
+}
+
+class _TransactionsListPageState extends State<TransactionsListPage> {
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +38,24 @@ class TransactionsListPage extends StatelessWidget {
         elevation: 0,
         title: const Text('Transactions', style: AppTextStyles.sectionTitle),
         actions: [
-          IconButton(icon: const Icon(Icons.filter_list), onPressed: () {}),
+          // Show clear button when filters are active
+          BlocBuilder<ExpenseCubit, ExpenseState>(
+            builder: (context, state) {
+              final hasFilters = context.read<ExpenseCubit>().hasActiveFilters;
+              return hasFilters
+                  ? TextButton(
+                      onPressed: () {
+                        _searchController.clear();
+                        context.read<ExpenseCubit>().clearFilters();
+                      },
+                      child: const Text(
+                        'Clear',
+                        style: TextStyle(color: AppColors.expense),
+                      ),
+                    )
+                  : const SizedBox();
+            },
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -34,46 +64,198 @@ class TransactionsListPage extends StatelessWidget {
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.add, color: AppColors.iconOnColor),
       ),
-      body: BlocBuilder<ExpenseCubit, ExpenseState>(
-        builder: (context, state) {
-          return state.when(
-            initial: () => const SizedBox(),
-            loading: () => const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            ),
-            loaded: (expenses, totalExpenses, totalIncome) {
-              if (expenses.isEmpty) {
-                return _EmptyState(
-                  onAddTap: () => context.router.push(AddExpenseRoute()),
-                );
-              }
-              return _TransactionsList(
-                expenses: expenses,
-                pageContext: context,
-              );
-            },
-            error: (message) => Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.error_outline,
-                    color: AppColors.expense,
-                    size: 48,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(message, style: AppTextStyles.bodySecondary),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () =>
-                        context.read<ExpenseCubit>().loadExpenses(),
-                    child: const Text('Retry'),
-                  ),
-                ],
+      body: Column(
+        children: [
+          // ── Search Bar ───────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (query) => context.read<ExpenseCubit>().search(query),
+              decoration: InputDecoration(
+                hintText: 'Search transactions...',
+                prefixIcon: const Icon(
+                  Icons.search,
+                  color: AppColors.textSecondary,
+                ),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(
+                          Icons.close,
+                          color: AppColors.textSecondary,
+                        ),
+                        onPressed: () {
+                          _searchController.clear();
+                          context.read<ExpenseCubit>().search('');
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: Theme.of(context).cardColor,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 16,
+                ),
               ),
             ),
-          );
-        },
+          ),
+
+          // ── Filter Chips ─────────────────────────────
+          const _FilterChips(),
+
+          // ── Transactions List ─────────────────────────
+          Expanded(
+            child: BlocBuilder<ExpenseCubit, ExpenseState>(
+              builder: (context, state) {
+                return state.when(
+                  initial: () => const SizedBox(),
+                  loading: () => const Center(
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  ),
+                  loaded: (expenses, totalExpenses, totalIncome) {
+                    if (expenses.isEmpty) {
+                      return _EmptyState(
+                        onAddTap: () => context.router.push(AddExpenseRoute()),
+                      );
+                    }
+                    return _TransactionsList(
+                      expenses: expenses,
+                      pageContext: context,
+                    );
+                  },
+                  error: (message) => Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          color: AppColors.expense,
+                          size: 48,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(message, style: AppTextStyles.bodySecondary),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () =>
+                              context.read<ExpenseCubit>().loadExpenses(),
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Filter chips row — expense, income, and category filters
+class _FilterChips extends StatelessWidget {
+  const _FilterChips();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<ExpenseCubit, ExpenseState>(
+      builder: (context, state) {
+        // Read current filter from cubit
+        final cubit = context.read<ExpenseCubit>();
+        final currentType = cubit.currentFilterType;
+
+        return SizedBox(
+          height: 52,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            children: [
+              // All — selected when no type filter active
+              _FilterChip(
+                label: 'All',
+                isSelected: currentType == null,
+                onTap: () => cubit.filterByType(null),
+              ),
+              const SizedBox(width: 8),
+              // Expense — selected when expense filter active
+              _FilterChip(
+                label: 'Expense',
+                icon: Icons.arrow_upward_rounded,
+                color: AppColors.expense,
+                isSelected: currentType == TransactionType.expense,
+                onTap: () => cubit.filterByType(TransactionType.expense),
+              ),
+              const SizedBox(width: 8),
+              // Income — selected when income filter active
+              _FilterChip(
+                label: 'Income',
+                icon: Icons.arrow_downward_rounded,
+                color: AppColors.income,
+                isSelected: currentType == TransactionType.income,
+                onTap: () => cubit.filterByType(TransactionType.income),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final IconData? icon;
+  final Color? color;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _FilterChip({
+    required this.label,
+    this.icon,
+    this.color,
+    this.isSelected = false,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final chipColor = color ?? AppColors.primary;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? chipColor.withOpacity(0.15)
+              : Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? chipColor : Colors.transparent,
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 14, color: chipColor),
+              const SizedBox(width: 4),
+            ],
+            Text(
+              label,
+              style: AppTextStyles.bodySecondary.copyWith(
+                color: isSelected ? chipColor : null,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
