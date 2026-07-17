@@ -8,6 +8,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../cubit/expense_cubit.dart';
 import '../cubit/expense_state.dart';
+import '../widgets/budget_alert_card.dart';
 import '../widgets/expense_summary_card.dart';
 import '../widgets/recent_transactions_list.dart';
 
@@ -43,6 +44,7 @@ class _HomeView extends StatelessWidget {
                   slivers: [
                     // Header section
                     SliverToBoxAdapter(child: _Header(balance: balance)),
+
                     // Income and expense summary cards
                     SliverToBoxAdapter(
                       child: ExpenseSummaryCard(
@@ -50,6 +52,10 @@ class _HomeView extends StatelessWidget {
                         totalExpenses: totalExpenses,
                       ),
                     ),
+
+                    // Budget alert card
+                    SliverToBoxAdapter(child: BudgetAlertCard()),
+
                     // Recent transactions section label
                     const SliverToBoxAdapter(
                       child: Padding(

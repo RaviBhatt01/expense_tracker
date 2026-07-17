@@ -17,8 +17,8 @@ class BudgetsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
-      // Use existing BudgetCubit from app level
-      value: context.read<BudgetCubit>()..loadBudgets(),
+      // Budget already loaded at app level — just use existing instance
+      value: context.read<BudgetCubit>(),
       child: const _BudgetsView(),
     );
   }
