@@ -37,10 +37,14 @@ import 'package:expense_tracker/features/expenses/domain/repositories/expense_re
     as _i476;
 import 'package:expense_tracker/features/expenses/domain/usecases/add_budget.dart'
     as _i608;
+import 'package:expense_tracker/features/expenses/domain/usecases/add_category.dart'
+    as _i732;
 import 'package:expense_tracker/features/expenses/domain/usecases/add_expense.dart'
     as _i638;
 import 'package:expense_tracker/features/expenses/domain/usecases/delete_budget.dart'
     as _i256;
+import 'package:expense_tracker/features/expenses/domain/usecases/delete_category.dart'
+    as _i845;
 import 'package:expense_tracker/features/expenses/domain/usecases/delete_expense.dart'
     as _i575;
 import 'package:expense_tracker/features/expenses/domain/usecases/get_budgets.dart'
@@ -92,14 +96,14 @@ extension GetItInjectableX on _i174.GetIt {
       () =>
           _i847.BudgetRepositoryImpl(datasource: gh<_i199.BudgetDatasource>()),
     );
-    gh.factory<_i21.GetBudgetsUseCase>(
-      () => _i21.GetBudgetsUseCase(repository: gh<_i706.BudgetRepository>()),
-    );
     gh.factory<_i608.AddBudgetUseCase>(
       () => _i608.AddBudgetUseCase(repository: gh<_i706.BudgetRepository>()),
     );
     gh.factory<_i256.DeleteBudgetUseCase>(
       () => _i256.DeleteBudgetUseCase(repository: gh<_i706.BudgetRepository>()),
+    );
+    gh.factory<_i21.GetBudgetsUseCase>(
+      () => _i21.GetBudgetsUseCase(repository: gh<_i706.BudgetRepository>()),
     );
     gh.factory<_i638.AddExpenseUseCase>(
       () => _i638.AddExpenseUseCase(repository: gh<_i476.ExpenseRepository>()),
@@ -125,10 +129,21 @@ extension GetItInjectableX on _i174.GetIt {
         repository: gh<_i628.CategoryRepository>(),
       ),
     );
+    gh.factory<_i732.AddCategoryUseCase>(
+      () =>
+          _i732.AddCategoryUseCase(repository: gh<_i628.CategoryRepository>()),
+    );
+    gh.factory<_i845.DeleteCategoryUseCase>(
+      () => _i845.DeleteCategoryUseCase(
+        repository: gh<_i628.CategoryRepository>(),
+      ),
+    );
     gh.factory<_i330.CategoryCubit>(
       () => _i330.CategoryCubit(
         getCategories: gh<_i1007.GetCategoriesUseCase>(),
         seedCategories: gh<_i877.SeedCategoriesUseCase>(),
+        addCategory: gh<_i732.AddCategoryUseCase>(),
+        deleteCategory: gh<_i845.DeleteCategoryUseCase>(),
       ),
     );
     gh.factory<_i7.ExpenseCubit>(

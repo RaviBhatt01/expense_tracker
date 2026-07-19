@@ -1,4 +1,5 @@
 import 'package:auto_route/auto_route.dart';
+import 'package:expense_tracker/core/router/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -41,6 +42,15 @@ class SettingsPage extends StatelessWidget {
                 context,
               ).showSnackBar(const SnackBar(content: Text('Coming soon')));
             },
+          ),
+          const SizedBox(height: 12),
+
+          _SettingsTile(
+            icon: Icons.category_outlined,
+            iconColor: AppColors.primary,
+            title: 'Manage Categories',
+            subtitle: 'Add or remove custom categories',
+            onTap: () => context.router.push(const CategoryManagementRoute()),
           ),
           const SizedBox(height: 12),
           _SettingsTile(
