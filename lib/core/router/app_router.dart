@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../features/expenses/domain/entities/expense.dart';
 import '../../features/expenses/presentation/pages/add_expense_page.dart';
+import '../../features/expenses/presentation/pages/category_management_page.dart';
 import '../../features/expenses/presentation/pages/home_page.dart';
 import '../../features/expenses/presentation/pages/transactions_page.dart';
 import '../../features/expenses/presentation/pages/transactions_list_page.dart';
@@ -39,7 +40,7 @@ class AppRouter extends RootStackRouter {
         AutoRoute(page: SettingsRoute.page),
       ],
     ),
-    // AddExpense is outside tabs — it pushes on top of everything
     AutoRoute(page: AddExpenseRoute.page),
+    AutoRoute(page: CategoryManagementRoute.page),
   ];
 }

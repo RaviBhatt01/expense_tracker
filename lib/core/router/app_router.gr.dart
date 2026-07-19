@@ -79,6 +79,22 @@ class BudgetsRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [CategoryManagementPage]
+class CategoryManagementRoute extends PageRouteInfo<void> {
+  const CategoryManagementRoute({List<PageRouteInfo>? children})
+    : super(CategoryManagementRoute.name, initialChildren: children);
+
+  static const String name = 'CategoryManagementRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const CategoryManagementPage();
+    },
+  );
+}
+
+/// generated route for
 /// [HomePage]
 class HomeRoute extends PageRouteInfo<void> {
   const HomeRoute({List<PageRouteInfo>? children})
