@@ -38,13 +38,10 @@ class BudgetCubit extends Cubit<BudgetState> {
   Future<void> loadBudgets() async {
     emit(const BudgetState.loading());
 
-    // Fetch budgets and current month expenses in parallel
-    // Future.wait runs both simultaneously — faster than sequential
     final results = await Future.wait([
       _getBudgets(NoParams()),
       _getExpenses(
         GetExpensesParams(
-          // Only look at current month expenses for budget progress
           startDate: DateTime(DateTime.now().year, DateTime.now().month, 1),
           endDate: DateTime.now(),
         ),
@@ -54,7 +51,6 @@ class BudgetCubit extends Cubit<BudgetState> {
     final budgetResult = results[0] as dynamic;
     final expenseResult = results[1] as dynamic;
 
-    // If either fails return error
     if (budgetResult.isLeft()) {
       budgetResult.fold(
         (failure) => emit(BudgetState.error(message: failure.message)),
@@ -75,9 +71,11 @@ class BudgetCubit extends Cubit<BudgetState> {
     final expenses =
         expenseResult.getOrElse(() => <Expense>[]) as List<Expense>;
 
-    // Calculate progress for each budget
+    _buildBudgetsWithProgress(budgets, expenses);
+  }
+
+  void _buildBudgetsWithProgress(List<Budget> budgets, List<Expense> expenses) {
     final budgetsWithProgress = budgets.map((budget) {
-      // Sum expenses for this category this month
       final spent = expenses
           .where(
             (e) =>
@@ -90,7 +88,6 @@ class BudgetCubit extends Cubit<BudgetState> {
           ? (spent / budget.amount) * 100
           : 0.0;
 
-      // Look up category details
       final category = _categoryCubit.getCategoryById(budget.categoryId);
 
       return BudgetWithProgress(
@@ -105,6 +102,16 @@ class BudgetCubit extends Cubit<BudgetState> {
     }).toList();
 
     emit(BudgetState.loaded(budgets: budgetsWithProgress));
+  }
+
+  // Call this when CategoryCubit finishes loading
+  // Rebuilds budget progress with correct category details
+  void onCategoriesLoaded() {
+    final currentState = state;
+    if (currentState is! BudgetLoaded) return;
+
+    // Trigger a fresh load to pick up category details
+    loadBudgets();
   }
 
   Future<void> addBudget({

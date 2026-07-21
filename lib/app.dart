@@ -41,13 +41,26 @@ class App extends StatelessWidget {
         ),
         BlocProvider(
           lazy: false,
-          create: (context) => BudgetCubit(
-            getBudgets: getIt<GetBudgetsUseCase>(),
-            addBudget: getIt<AddBudgetUseCase>(),
-            deleteBudget: getIt<DeleteBudgetUseCase>(),
-            getExpenses: getIt<GetExpensesUseCase>(),
-            categoryCubit: context.read<CategoryCubit>(),
-          )..loadBudgets(),
+          create: (context) {
+            final categoryCubit = context.read<CategoryCubit>();
+            final budgetCubit = BudgetCubit(
+              getBudgets: getIt<GetBudgetsUseCase>(),
+              addBudget: getIt<AddBudgetUseCase>(),
+              deleteBudget: getIt<DeleteBudgetUseCase>(),
+              getExpenses: getIt<GetExpensesUseCase>(),
+              categoryCubit: categoryCubit,
+            )..loadBudgets();
+
+            // When categories finish loading, rebuild budgets
+            // so they show correct icons and names
+            categoryCubit.stream.listen((state) {
+              if (state is CategoryLoaded) {
+                budgetCubit.loadBudgets();
+              }
+            });
+
+            return budgetCubit;
+          },
         ),
       ],
       // BlocBuilder listens to ThemeCubit

@@ -6,6 +6,7 @@ import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../cubit/category_cubit.dart';
 import '../cubit/expense_cubit.dart';
 import '../cubit/expense_state.dart';
 import '../widgets/budget_alert_card.dart';
@@ -40,55 +41,44 @@ class _HomeView extends StatelessWidget {
               loading: () => const Center(child: CircularProgressIndicator()),
               loaded: (expenses, totalExpenses, totalIncome) {
                 final balance = totalIncome - totalExpenses;
-                return RefreshIndicator(
-                  onRefresh: () async {
-                    context.read<ExpenseCubit>().loadExpenses();
-                  },
-                  child: CustomScrollView(
-                    slivers: [
-                      // Header section
-                      SliverToBoxAdapter(child: _Header(balance: balance)),
 
-                      // Income and expense summary cards
-                      SliverToBoxAdapter(
-                        child: ExpenseSummaryCard(
-                          totalIncome: totalIncome,
-                          totalExpenses: totalExpenses,
+                return BlocBuilder<CategoryCubit, CategoryState>(
+                  builder: (context, categoryState) {
+                    // Wait for categories to load before rendering
+                    // This ensures category icons show correctly on first render
+                    if (categoryState is! CategoryLoaded) {
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.primary,
                         ),
-                      ),
+                      );
+                    }
 
-                      // Budget alert card
-                      SliverToBoxAdapter(child: BudgetAlertCard()),
-
-                      // Recent transactions section label
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-                          child: Row(
-                            children: [
-                              const Text(
-                                'Recent Transactions',
-                                style: AppTextStyles.sectionTitle,
-                              ),
-                              const Spacer(),
-                              TextButton(
-                                onPressed: () {
-                                  context.router.push(
-                                    const TransactionsRoute(),
-                                  );
-                                },
-                                child: const Text('View All'),
-                              ),
-                            ],
+                    return CustomScrollView(
+                      slivers: [
+                        SliverToBoxAdapter(child: _Header(balance: balance)),
+                        SliverToBoxAdapter(
+                          child: ExpenseSummaryCard(
+                            totalIncome: totalIncome,
+                            totalExpenses: totalExpenses,
                           ),
                         ),
-                      ),
-                      // Show only last 5 transactions on home screen
-                      RecentTransactionsList(
-                        expenses: expenses.take(5).toList(),
-                      ),
-                    ],
-                  ),
+                        const SliverToBoxAdapter(child: BudgetAlertCard()),
+                        const SliverToBoxAdapter(
+                          child: Padding(
+                            padding: EdgeInsets.fromLTRB(20, 24, 20, 12),
+                            child: Text(
+                              'Recent Transactions',
+                              style: AppTextStyles.sectionTitle,
+                            ),
+                          ),
+                        ),
+                        RecentTransactionsList(
+                          expenses: expenses.take(5).toList(),
+                        ),
+                      ],
+                    );
+                  },
                 );
               },
               error: (message) => Center(
