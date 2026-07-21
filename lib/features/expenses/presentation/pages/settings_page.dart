@@ -7,6 +7,10 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/theme_cubit.dart';
 import '../../../../core/utils/app_constants.dart';
+import '../../../../core/utils/csv_exporter.dart';
+import '../cubit/category_cubit.dart';
+import '../cubit/expense_cubit.dart';
+import '../cubit/expense_state.dart';
 
 @RoutePage()
 class SettingsPage extends StatelessWidget {
@@ -45,6 +49,7 @@ class SettingsPage extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
+          // ── Category Section ────────────────────────────
           _SettingsTile(
             icon: Icons.category_outlined,
             iconColor: AppColors.primary,
@@ -53,17 +58,14 @@ class SettingsPage extends StatelessWidget {
             onTap: () => context.router.push(const CategoryManagementRoute()),
           ),
           const SizedBox(height: 12),
+
+          // ── Export Section ────────────────────────────
           _SettingsTile(
             icon: Icons.download_outlined,
             iconColor: AppColors.primary,
             title: 'Export Data',
-            subtitle: 'Export transactions as CSV',
-            onTap: () {
-              // TODO: export in future session
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('Coming soon')));
-            },
+            subtitle: 'Export all transactions as CSV',
+            onTap: () => _exportData(context),
           ),
           const SizedBox(height: 24),
 
@@ -88,6 +90,39 @@ class SettingsPage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _exportData(BuildContext context) async {
+    final expenseState = context.read<ExpenseCubit>().state;
+    final categoryState = context.read<CategoryCubit>().state;
+
+    // Check both states are loaded
+    if (expenseState is! ExpenseLoaded || categoryState is! CategoryLoaded) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please wait for data to load')),
+      );
+      return;
+    }
+
+    // Get ALL expenses from cubit's internal list
+    // not the filtered state — export always exports everything
+    final expenses = context.read<ExpenseCubit>().allExpenses;
+    final categories = categoryState.categories;
+
+    if (expenses.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No transactions to export')),
+      );
+      return;
+    }
+
+    try {
+      await CsvExporter.export(expenses: expenses, categories: categories);
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Export failed: $e')));
+    }
   }
 }
 

@@ -34,6 +34,10 @@ class ExpenseCubit extends Cubit<ExpenseState> {
   String? get currentFilterCategoryId => _filterCategoryId;
   String get currentSearchQuery => _searchQuery;
 
+  // Expose full unfiltered list for export
+  // Export always exports everything regardless of active filters
+  List<Expense> get allExpenses => _allExpenses;
+
   ExpenseCubit({
     required AddExpenseUseCase addExpense,
     required GetExpensesUseCase getExpenses,
