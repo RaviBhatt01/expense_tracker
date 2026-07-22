@@ -312,7 +312,7 @@ class _TransactionsList extends StatelessWidget {
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(dialogContext);
+              context.router.maybePop(dialogContext);
               _deleteWithUndo(context, expense);
             },
             child: const Text(

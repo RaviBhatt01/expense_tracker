@@ -227,22 +227,29 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
     Icons.brush,
     Icons.camera,
     Icons.games,
+    
   ];
 
   // Available colors for user to pick from
   final List<Color> _availableColors = [
-    const Color(0xFF6C63FF),
-    const Color(0xFFFF6B6B),
-    const Color(0xFF4ECDC4),
-    const Color(0xFFFFBE0B),
-    const Color(0xFF4CAF50),
-    const Color(0xFF2196F3),
-    const Color(0xFFFF9800),
-    const Color(0xFF9C27B0),
-    const Color(0xFFE91E63),
-    const Color(0xFF00BCD4),
-    const Color(0xFF8BC34A),
-    const Color(0xFFFF5722),
+    // Purples & Violets
+    const Color(0xFF7C3AED), // bold violet
+    const Color(0xFF6366F1), // indigo
+    // Reds & Pinks
+    const Color(0xFFEF4444), // bold red
+    const Color(0xFFEC4899), // hot pink
+    // Oranges & Yellows
+    const Color(0xFFF97316), // vivid orange
+    const Color(0xFFF59E0B), // amber
+    // Greens
+    const Color(0xFF10B981), // emerald
+    const Color(0xFF84CC16), // lime green
+    // Blues & Teals
+    const Color(0xFF3B82F6), // bright blue
+    const Color(0xFF06B6D4), // cyan
+    const Color(0xFF14B8A6), // teal
+    // Special
+    const Color(0xFFFF6B35), // coral orange
   ];
 
   @override
