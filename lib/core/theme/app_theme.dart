@@ -13,10 +13,9 @@ class AppTheme {
         primary: AppColors.primary,
         surface: AppColors.surface,
         error: AppColors.expense,
-        onSurface: Colors.white, // ← text on surface
-        onBackground: Colors.white, // ← text on background
+        onSurface: Colors.white,
+        onBackground: Colors.white,
       ),
-      // Text theme — Flutter uses these automatically
       textTheme: const TextTheme(
         titleLarge: TextStyle(
           color: Colors.white,
@@ -29,27 +28,28 @@ class AppTheme {
           fontWeight: FontWeight.w500,
         ),
         bodyMedium: TextStyle(color: Colors.white, fontSize: 14),
-        bodySmall: TextStyle(color: Color(0x99FFFFFF), fontSize: 12),
+        bodySmall: TextStyle(color: AppColors.textSecondary, fontSize: 12),
         labelSmall: TextStyle(
-          color: Color(0x99FFFFFF),
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
+          color: AppColors.textSecondary,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.8,
         ),
       ),
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.background,
         elevation: 0,
-        titleTextStyle: const TextStyle(
+        titleTextStyle: TextStyle(
           color: Colors.white,
           fontSize: 18,
           fontWeight: FontWeight.bold,
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: Colors.white),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: AppColors.surface,
         selectedItemColor: AppColors.primary,
-        unselectedItemColor: Color(0x99FFFFFF),
+        unselectedItemColor: AppColors.textSecondary,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -67,7 +67,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        hintStyle: const TextStyle(color: Color(0x61FFFFFF)),
+        hintStyle: const TextStyle(color: AppColors.textHint),
       ),
       cardColor: AppColors.surface,
       dividerColor: AppColors.divider,
@@ -77,49 +77,49 @@ class AppTheme {
   static ThemeData get light {
     return ThemeData(
       brightness: Brightness.light,
-      scaffoldBackgroundColor: const Color(0xFFF5F5F5),
+      scaffoldBackgroundColor: const Color(0xFFF4F4F8),
       primaryColor: AppColors.primary,
       colorScheme: const ColorScheme.light(
         primary: AppColors.primary,
         surface: Colors.white,
         error: AppColors.expense,
-        onSurface: Color(0xFF1A1A2E), // ← dark text on light surface
-        onBackground: Color(0xFF1A1A2E), // ← dark text on light background
+        onSurface: Color(0xFF111114),
+        onBackground: Color(0xFF111114),
       ),
-      // Text theme for light mode — dark text
       textTheme: const TextTheme(
         titleLarge: TextStyle(
-          color: Color(0xFF1A1A2E),
+          color: Color(0xFF111114),
           fontSize: 18,
           fontWeight: FontWeight.bold,
         ),
         titleMedium: TextStyle(
-          color: Color(0xFF1A1A2E),
+          color: Color(0xFF111114),
           fontSize: 15,
           fontWeight: FontWeight.w500,
         ),
-        bodyMedium: TextStyle(color: Color(0xFF1A1A2E), fontSize: 14),
+        bodyMedium: TextStyle(color: Color(0xFF111114), fontSize: 14),
         bodySmall: TextStyle(color: Color(0xFF6B7280), fontSize: 12),
         labelSmall: TextStyle(
           color: Color(0xFF6B7280),
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.8,
         ),
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFFF5F5F5),
+        backgroundColor: Color(0xFFF4F4F8),
         elevation: 0,
         titleTextStyle: TextStyle(
-          color: Color(0xFF1A1A2E),
+          color: Color(0xFF111114),
           fontSize: 18,
           fontWeight: FontWeight.bold,
         ),
-        iconTheme: IconThemeData(color: Color(0xFF1A1A2E)),
+        iconTheme: IconThemeData(color: Color(0xFF111114)),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: Colors.white,
         selectedItemColor: AppColors.primary,
-        unselectedItemColor: Colors.grey,
+        unselectedItemColor: Color(0xFF9CA3AF),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -140,7 +140,7 @@ class AppTheme {
         hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
       ),
       cardColor: Colors.white,
-      dividerColor: Colors.grey.shade200,
+      dividerColor: const Color(0xFFE5E7EB),
     );
   }
 }
