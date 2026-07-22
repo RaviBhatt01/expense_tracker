@@ -6,45 +6,51 @@ import 'app_colors.dart';
 class AppTextStyles {
   AppTextStyles._();
 
-  // No color specified — Flutter uses theme text color automatically
+  // ─── Display ──────────────────────────────────────────────────
+  /// Large balance amount on home screen
   static const TextStyle balanceAmount = TextStyle(
     fontSize: 36,
     fontWeight: FontWeight.bold,
     letterSpacing: -0.5,
+    // No color — uses theme text color automatically
   );
 
+  // ─── Headings ─────────────────────────────────────────────────
   static const TextStyle sectionTitle = TextStyle(
     fontSize: 18,
     fontWeight: FontWeight.bold,
   );
 
   static const TextStyle cardTitle = TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.w500,
+    fontSize: 15,
+    fontWeight: FontWeight.w600,
   );
 
   static const TextStyle cardSubTitle = TextStyle(
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: FontWeight.normal,
+    // No hardcoded color — inherits from theme
   );
 
+  // ─── Body ─────────────────────────────────────────────────────
   static const TextStyle body = TextStyle(
     fontSize: 14,
     fontWeight: FontWeight.normal,
   );
 
+  /// Secondary body — uses neutral grey that works on both themes
   static const TextStyle bodySecondary = TextStyle(
     fontSize: 12,
     fontWeight: FontWeight.normal,
-    // Keep secondary color — will not be perfectly theme-aware
-    // but close enough for now
-    color: Color(0x99FFFFFF),
+    color: AppColors.textSecondary, // neutral grey — readable on both themes
   );
 
+  // ─── Labels ───────────────────────────────────────────────────
   static const TextStyle label = TextStyle(
-    fontSize: 12,
-    fontWeight: FontWeight.w500,
-    letterSpacing: 0.5,
+    fontSize: 11,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.8,
+    color: AppColors.textSecondary,
   );
 
   static const TextStyle greeting = TextStyle(
@@ -52,14 +58,15 @@ class AppTextStyles {
     fontWeight: FontWeight.normal,
   );
 
-  // Keep semantic colors — these never change with theme
-  static TextStyle expenseAmount = const TextStyle(
+  // ─── Amounts ──────────────────────────────────────────────────
+  /// Semantic colors — never change with theme
+  static const TextStyle expenseAmount = TextStyle(
     color: AppColors.expense,
     fontSize: 15,
     fontWeight: FontWeight.bold,
   );
 
-  static TextStyle incomeAmount = const TextStyle(
+  static const TextStyle incomeAmount = TextStyle(
     color: AppColors.income,
     fontSize: 15,
     fontWeight: FontWeight.bold,
