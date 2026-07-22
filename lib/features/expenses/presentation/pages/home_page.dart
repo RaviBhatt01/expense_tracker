@@ -64,12 +64,21 @@ class _HomeView extends StatelessWidget {
                           ),
                         ),
                         const SliverToBoxAdapter(child: BudgetAlertCard()),
-                        const SliverToBoxAdapter(
+                        SliverToBoxAdapter(
                           child: Padding(
-                            padding: EdgeInsets.fromLTRB(20, 24, 20, 12),
-                            child: Text(
-                              'Recent Transactions',
-                              style: AppTextStyles.sectionTitle,
+                            padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                            child: Row(
+                              children: [
+                                const Text(
+                                  'Recent Transactions',
+                                  style: AppTextStyles.sectionTitle,
+                                ),
+                                const Spacer(),
+                                // TextButton(
+                                //   onPressed: () => context.router.push(TransactionsRoute()),
+                                //   child: const Text('View All'),
+                                // ),
+                              ],
                             ),
                           ),
                         ),

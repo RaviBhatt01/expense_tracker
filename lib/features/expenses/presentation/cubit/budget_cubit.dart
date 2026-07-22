@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:collection/collection.dart';
 
 import '../../../../core/usecases/usecase.dart';
 import '../../domain/entities/budget.dart';
@@ -117,18 +118,60 @@ class BudgetCubit extends Cubit<BudgetState> {
   Future<void> addBudget({
     required String categoryId,
     required double amount,
-    required BudgetPeriod period,
   }) async {
+    // Check if budget already exists for this category
+    final currentState = state;
+    if (currentState is BudgetLoaded) {
+      final exists = currentState.budgets.any(
+        (b) => b.budget.categoryId == categoryId,
+      );
+
+      if (exists) {
+        emit(
+          const BudgetState.error(
+            message: 'A budget already exists for this category',
+          ),
+        );
+        // Reload to restore state
+        await loadBudgets();
+        return;
+      }
+    }
+
     final budget = Budget(
-      // Generate unique ID locally
       id: FirebaseFirestore.instance.collection('budgets').doc().id,
       categoryId: categoryId,
       amount: amount,
-      period: period,
+      period: BudgetPeriod.monthly, // always monthly
       createdAt: DateTime.now(),
     );
 
     final result = await _addBudget(budget);
+
+    result.fold(
+      (failure) => emit(BudgetState.error(message: failure.message)),
+      (_) => loadBudgets(),
+    );
+  }
+
+  Future<void> updateBudget({
+    required String id,
+    required double amount,
+  }) async {
+    final currentState = state;
+    if (currentState is! BudgetLoaded) return;
+
+    // Find existing budget
+    final existing = currentState.budgets.firstWhereOrNull(
+      (b) => b.budget.id == id,
+    );
+
+    if (existing == null) return;
+
+    // Create updated budget preserving all other fields
+    final updatedBudget = existing.budget.copyWith(amount: amount);
+
+    final result = await _addBudget(updatedBudget);
 
     result.fold(
       (failure) => emit(BudgetState.error(message: failure.message)),
