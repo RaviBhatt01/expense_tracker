@@ -120,108 +120,141 @@ class _BudgetCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = Color(item.categoryColorValue);
-    final remaining = item.budget.amount - item.spent;
+    // final remaining = item.budget.amount - item.spent;
 
-    return Dismissible(
-      key: Key(item.budget.id),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          color: AppColors.expense,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(16),
       ),
-      confirmDismiss: (_) async {
-        context.read<BudgetCubit>().deleteBudget(item.budget.id);
-        return false;
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                // Category icon
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(item.categoryIcon, color: color, size: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(item.categoryName, style: AppTextStyles.cardTitle),
-                      Text(
-                        item.budget.period.name.toUpperCase(),
-                        style: AppTextStyles.bodySecondary.copyWith(
-                          fontSize: 10,
-                          letterSpacing: 1,
-                        ),
+                child: Icon(item.categoryIcon, color: color, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(item.categoryName, style: AppTextStyles.cardTitle),
+                    Text(
+                      '${CurrencyFormatter.format(item.spent)} of ${CurrencyFormatter.format(item.budget.amount)} spent',
+                      style: AppTextStyles.bodySecondary.copyWith(
+                        fontSize: 10,
+                        letterSpacing: 1,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                // Over budget warning icon
-                if (item.isOverBudget)
-                  const Icon(
+              ),
+              // Over budget warning
+              if (item.isOverBudget)
+                const Padding(
+                  padding: EdgeInsets.only(right: 8),
+                  child: Icon(
                     Icons.warning_amber_rounded,
                     color: AppColors.warning,
                     size: 20,
                   ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            // Progress bar
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: item.percentage / 100,
-                // Red when over budget, category color otherwise
-                backgroundColor: Theme.of(context).dividerColor,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  item.isOverBudget ? AppColors.expense : color,
                 ),
-                minHeight: 8,
+            ],
+          ),
+          const SizedBox(height: 16),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: item.percentage / 100,
+              backgroundColor: Theme.of(context).dividerColor,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                item.isOverBudget ? AppColors.expense : color,
               ),
+              minHeight: 8,
             ),
-            const SizedBox(height: 12),
-            // Spent vs budget amounts
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '${CurrencyFormatter.format(item.spent)} spent',
-                  style: AppTextStyles.bodySecondary,
+          ),
+          // Edit and delete buttons
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 20),
+                onPressed: () => _showEditSheet(context),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+              const SizedBox(width: 4),
+              IconButton(
+                icon: const Icon(
+                  Icons.delete_outline,
+                  color: AppColors.expense,
+                  size: 20,
                 ),
-                Text(
-                  item.isOverBudget
-                      ? 'Over by NPR ${(-remaining).toStringAsFixed(0)}'
-                      : 'NPR ${remaining.toStringAsFixed(0)} left',
-                  style: AppTextStyles.bodySecondary.copyWith(
-                    color: item.isOverBudget
-                        ? AppColors.expense
-                        : AppColors.income,
-                  ),
-                ),
-              ],
-            ),
-          ],
+                onPressed: () => _confirmDelete(context),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: Theme.of(context).cardColor,
+        title: const Text('Delete Budget', style: AppTextStyles.sectionTitle),
+        content: Text(
+          'Delete budget for "${item.categoryName}"?',
+          style: AppTextStyles.bodySecondary,
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              context.read<BudgetCubit>().deleteBudget(item.budget.id);
+            },
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: AppColors.expense),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => BlocProvider.value(
+        value: context.read<BudgetCubit>(),
+        child: _EditBudgetSheet(item: item),
       ),
     );
   }
@@ -238,6 +271,7 @@ class _AddBudgetSheet extends StatefulWidget {
 class _AddBudgetSheetState extends State<_AddBudgetSheet> {
   final _amountController = TextEditingController();
   String? _selectedCategoryId;
+  // ignore: unused_field
   BudgetPeriod _selectedPeriod = BudgetPeriod.monthly;
 
   @override
@@ -261,10 +295,10 @@ class _AddBudgetSheetState extends State<_AddBudgetSheet> {
       return;
     }
 
+    // No period parameter — always monthly
     context.read<BudgetCubit>().addBudget(
       categoryId: _selectedCategoryId!,
       amount: double.parse(_amountController.text),
-      period: _selectedPeriod,
     );
 
     context.router.maybePop(context);
@@ -359,46 +393,46 @@ class _AddBudgetSheetState extends State<_AddBudgetSheet> {
           ),
           const SizedBox(height: 16),
 
-          // Period selector
-          const Text('Period', style: AppTextStyles.label),
-          const SizedBox(height: 8),
-          Row(
-            children: BudgetPeriod.values.map((period) {
-              final isSelected = period == _selectedPeriod;
-              return Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: GestureDetector(
-                    onTap: () => setState(() => _selectedPeriod = period),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? AppColors.primary
-                            : Theme.of(context).scaffoldBackgroundColor,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        period.name[0].toUpperCase() + period.name.substring(1),
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: isSelected
-                              ? Colors.white
-                              : AppColors.textSecondary,
-                          fontWeight: isSelected
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 24),
+          // // Period selector
+          // const Text('Period', style: AppTextStyles.label),
+          // const SizedBox(height: 8),
+          // Row(
+          //   children: BudgetPeriod.values.map((period) {
+          //     final isSelected = period == _selectedPeriod;
+          //     return Expanded(
+          //       child: Padding(
+          //         padding: const EdgeInsets.only(right: 8),
+          //         child: GestureDetector(
+          //           onTap: () => setState(() => _selectedPeriod = period),
+          //           child: AnimatedContainer(
+          //             duration: const Duration(milliseconds: 200),
+          //             padding: const EdgeInsets.symmetric(vertical: 12),
+          //             decoration: BoxDecoration(
+          //               color: isSelected
+          //                   ? AppColors.primary
+          //                   : Theme.of(context).scaffoldBackgroundColor,
+          //               borderRadius: BorderRadius.circular(12),
+          //             ),
+          //             child: Text(
+          //               period.name[0].toUpperCase() + period.name.substring(1),
+          //               textAlign: TextAlign.center,
+          //               style: TextStyle(
+          //                 color: isSelected
+          //                     ? Colors.white
+          //                     : AppColors.textSecondary,
+          //                 fontWeight: isSelected
+          //                     ? FontWeight.bold
+          //                     : FontWeight.normal,
+          //                 fontSize: 13,
+          //               ),
+          //             ),
+          //           ),
+          //         ),
+          //       ),
+          //     );
+          //   }).toList(),
+          // ),
+          // const SizedBox(height: 24),
 
           // Save button
           SizedBox(
@@ -408,6 +442,128 @@ class _AddBudgetSheetState extends State<_AddBudgetSheet> {
               onPressed: _submit,
               child: const Text(
                 'Save Budget',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EditBudgetSheet extends StatefulWidget {
+  final BudgetWithProgress item;
+
+  const _EditBudgetSheet({required this.item});
+
+  @override
+  State<_EditBudgetSheet> createState() => _EditBudgetSheetState();
+}
+
+class _EditBudgetSheetState extends State<_EditBudgetSheet> {
+  late final TextEditingController _amountController;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-fill with existing budget amount
+    _amountController = TextEditingController(
+      text: widget.item.budget.amount.toStringAsFixed(0),
+    );
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (_amountController.text.isEmpty) return;
+
+    context.read<BudgetCubit>().updateBudget(
+      id: widget.item.budget.id,
+      amount: double.parse(_amountController.text),
+    );
+
+    context.router.maybePop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final color = Color(widget.item.categoryColorValue);
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + bottomInset),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.divider,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          // Category info
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(widget.item.categoryIcon, color: color, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Edit Budget', style: AppTextStyles.sectionTitle),
+                  Text(
+                    widget.item.categoryName,
+                    style: AppTextStyles.bodySecondary,
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          const Text('New Budget Amount', style: AppTextStyles.label),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _amountController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+            ],
+            autofocus: true,
+            decoration: InputDecoration(
+              prefixText: 'NPR ',
+              filled: true,
+              fillColor: Theme.of(context).scaffoldBackgroundColor,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton(
+              onPressed: _submit,
+              child: const Text(
+                'Update Budget',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
