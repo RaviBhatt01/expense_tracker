@@ -9,27 +9,27 @@ class AppColors {
 
   // ─── Background Colors ───────────────────────────────────────
   /// Main app background — deep dark blue
-  static const Color background = Color(0xFF1E1E2E);
+  static const Color background = Color(0xFF111114);
 
   /// Card and container background — slightly lighter than background
-  static const Color surface = Color(0xFF2A2A3E);
+  static const Color surface = Color(0xFF1C1C21);
 
   /// Input field background
   static const Color inputBackground = Color(0xFF313145);
 
   // ─── Brand Colors ─────────────────────────────────────────────
   /// Primary purple — buttons, FAB, active states
-  static const Color primary = Color(0xFF6C63FF);
+  static const Color primary = Color(0xFF7C3AED);
 
   /// Lighter purple for hover/pressed states
   static const Color primaryLight = Color(0xFF8B85FF);
 
   // ─── Semantic Colors ──────────────────────────────────────────
   /// Income amounts and positive values
-  static const Color income = Color(0xFF4CAF50);
+  static const Color income = Color(0xFF10B981);
 
   /// Expense amounts and negative values
-  static const Color expense = Color(0xFFE53935);
+  static const Color expense = Color(0xFFFF4444);
 
   /// Warnings — budget approaching limit
   static const Color warning = Color(0xFFFFA726);
