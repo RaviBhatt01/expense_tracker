@@ -1,10 +1,27 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
-import '../../domain/entities/expense.dart';
+part of 'analytics_cubit.dart';
 
-part 'analytics_state.freezed.dart';
+// Holds income vs expense data for one month
+// Used in the grouped bar chart
+class MonthlyComparison {
+  final String month; // e.g. "Jan", "Feb"
+  final double income;
+  final double expense;
 
-// Which time period the user has selected
-enum AnalyticsPeriod { week, month, year }
+  const MonthlyComparison({
+    required this.month,
+    required this.income,
+    required this.expense,
+  });
+}
+
+// Holds spending data for one day
+// Used in the weekly trend line chart
+class DailySpending {
+  final String day; // e.g. "Mon", "Tue"
+  final double amount;
+
+  const DailySpending({required this.day, required this.amount});
+}
 
 // Holds pre-calculated data for one category's spending
 class CategoryAnalytics {
@@ -13,6 +30,7 @@ class CategoryAnalytics {
   final double amount;
   final double percentage;
   final int colorValue;
+  final int iconCode;
 
   const CategoryAnalytics({
     required this.categoryId,
@@ -20,8 +38,11 @@ class CategoryAnalytics {
     required this.amount,
     required this.percentage,
     required this.colorValue,
+    required this.iconCode,
   });
 }
+
+enum AnalyticsPeriod { week, month, year }
 
 @freezed
 class AnalyticsState with _$AnalyticsState {
@@ -33,6 +54,10 @@ class AnalyticsState with _$AnalyticsState {
     required double totalIncome,
     required List<CategoryAnalytics> categoryBreakdown,
     required AnalyticsPeriod period,
+    // Last 6 months income vs expense data
+    required List<MonthlyComparison> monthlyComparisons,
+    // Last 7 days daily spending
+    required List<DailySpending> dailySpending,
   }) = AnalyticsLoaded;
   const factory AnalyticsState.error({required String message}) =
       AnalyticsError;

@@ -13,6 +13,7 @@ import 'features/expenses/domain/usecases/add_budget.dart';
 import 'features/expenses/domain/usecases/delete_budget.dart';
 import 'features/expenses/domain/usecases/get_budgets.dart';
 import 'features/expenses/presentation/cubit/budget_cubit.dart';
+import 'features/expenses/presentation/cubit/expense_state.dart';
 
 class App extends StatelessWidget {
   App({super.key});
@@ -34,26 +35,47 @@ class App extends StatelessWidget {
           create: (context) => getIt<ExpenseCubit>()..loadExpenses(),
         ),
         BlocProvider(
-          create: (context) => AnalyticsCubit(
-            getExpenses: getIt<GetExpensesUseCase>(),
-            categoryCubit: context.read<CategoryCubit>(),
-          ),
+          create: (context) {
+            final analyticsCubit = AnalyticsCubit(
+              getExpenses: getIt<GetExpensesUseCase>(),
+              categoryCubit: context.read<CategoryCubit>(),
+            );
+
+            // When expenses change, process them directly
+            // No additional Firebase call needed
+            context.read<ExpenseCubit>().stream.listen((state) {
+              if (state is ExpenseLoaded) {
+                analyticsCubit.processExpenses(
+                  allExpenses: context.read<ExpenseCubit>().allExpenses,
+                );
+              }
+            });
+
+            return analyticsCubit;
+          },
         ),
         BlocProvider(
           lazy: false,
           create: (context) {
-            final categoryCubit = context.read<CategoryCubit>();
             final budgetCubit = BudgetCubit(
               getBudgets: getIt<GetBudgetsUseCase>(),
               addBudget: getIt<AddBudgetUseCase>(),
               deleteBudget: getIt<DeleteBudgetUseCase>(),
               getExpenses: getIt<GetExpensesUseCase>(),
-              categoryCubit: categoryCubit,
+              categoryCubit: context.read<CategoryCubit>(),
             )..loadBudgets();
+
+            // Reload budgets when expenses change
+            // Budget progress depends on current expenses
+            context.read<ExpenseCubit>().stream.listen((state) {
+              if (state is ExpenseLoaded) {
+                budgetCubit.loadBudgets();
+              }
+            });
 
             // When categories finish loading, rebuild budgets
             // so they show correct icons and names
-            categoryCubit.stream.listen((state) {
+            context.read<CategoryCubit>().stream.listen((state) {
               if (state is CategoryLoaded) {
                 budgetCubit.loadBudgets();
               }
