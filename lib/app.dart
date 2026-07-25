@@ -35,6 +35,7 @@ class App extends StatelessWidget {
           create: (context) => getIt<ExpenseCubit>()..loadExpenses(),
         ),
         BlocProvider(
+          lazy: false,
           create: (context) {
             final analyticsCubit = AnalyticsCubit(
               getExpenses: getIt<GetExpensesUseCase>(),

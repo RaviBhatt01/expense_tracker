@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 // Simple cubit — state is just a ThemeMode
 // ThemeMode.dark, ThemeMode.light, ThemeMode.system
 class ThemeCubit extends Cubit<ThemeMode> {
-  ThemeCubit() : super(ThemeMode.dark); // default to dark
+  ThemeCubit() : super(ThemeMode.light); // default to light
 
   void setDark() => emit(ThemeMode.dark);
   void setLight() => emit(ThemeMode.light);
