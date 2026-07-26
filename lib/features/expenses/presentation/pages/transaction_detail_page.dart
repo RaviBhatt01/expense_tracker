@@ -32,28 +32,64 @@ class TransactionDetailPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         // Back button — pops back to transactions list
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          icon: Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.15),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: Colors.white,
+              size: 16,
+            ),
+          ),
           onPressed: () => context.maybePop(),
         ),
-        title: const Text('Transaction', style: AppTextStyles.sectionTitle),
         actions: [
-          // Edit button — opens add/edit form
+          // Edit button
           IconButton(
-            icon: const Icon(Icons.edit_outlined),
+            icon: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.edit_outlined,
+                color: Colors.white,
+                size: 16,
+              ),
+            ),
             onPressed: () =>
                 context.router.push(AddExpenseRoute(expense: expense)),
           ),
           // Delete button
-          IconButton(
-            icon: const Icon(Icons.delete_outline, color: AppColors.expense),
-            onPressed: () => _showDeleteDialog(context),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: IconButton(
+              icon: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.expense.withOpacity(0.25),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+              onPressed: () => _showDeleteDialog(context),
+            ),
           ),
         ],
       ),
+      extendBodyBehindAppBar: true,
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -66,13 +102,13 @@ class TransactionDetailPage extends StatelessWidget {
               title: expense.title,
               categoryName: category?.name ?? 'General',
             ),
-            const SizedBox(height: 24),
 
             // ── Details Section ───────────────────────────
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
               child: Column(
                 children: [
+                  // Main info card
                   _DetailCard(
                     children: [
                       _DetailRow(
@@ -80,14 +116,14 @@ class TransactionDetailPage extends StatelessWidget {
                         label: 'Date',
                         value: DateFormatter.full(expense.date),
                       ),
-                      _Divider(),
+                      _DetailDivider(),
                       _DetailRow(
                         icon: Icons.category_outlined,
                         label: 'Category',
                         value: category?.name ?? 'General',
                         valueColor: color,
                       ),
-                      _Divider(),
+                      _DetailDivider(),
                       _DetailRow(
                         icon: isExpense
                             ? Icons.arrow_upward_rounded
@@ -98,35 +134,169 @@ class TransactionDetailPage extends StatelessWidget {
                             ? AppColors.expense
                             : AppColors.income,
                       ),
+                      _DetailDivider(),
+                      _DetailRow(
+                        icon: Icons.access_time_outlined,
+                        label: 'Added on',
+                        value: DateFormatter.full(expense.createdAt),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
 
                   // Note section — only shown if note exists
                   if (expense.note != null && expense.note!.isNotEmpty)
-                    _DetailCard(
+                    Column(
                       children: [
-                        _DetailRow(
-                          icon: Icons.notes_outlined,
-                          label: 'Note',
-                          value: expense.note!,
+                        _DetailCard(
+                          children: [
+                            _DetailRow(
+                              icon: Icons.notes_outlined,
+                              label: 'Note',
+                              value: expense.note!,
+                            ),
+                          ],
                         ),
+                        const SizedBox(height: 16),
                       ],
                     ),
 
-                  const SizedBox(height: 16),
+                  // Receipt section — only shown if receipt exists
+                  if (expense.receiptUrl != null &&
+                      expense.receiptUrl!.isNotEmpty)
+                    Column(
+                      children: [
+                        _DetailCard(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(
+                                            context,
+                                          ).scaffoldBackgroundColor,
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: const Icon(
+                                          Icons.receipt_outlined,
+                                          size: 18,
+                                          color: AppColors.primary,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      const Text(
+                                        'Receipt',
+                                        style: AppTextStyles.bodySecondary,
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  // Receipt image
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Image.network(
+                                      expense.receiptUrl!,
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                      loadingBuilder:
+                                          (context, child, progress) {
+                                            if (progress == null) return child;
+                                            return Container(
+                                              height: 150,
+                                              decoration: BoxDecoration(
+                                                color: Theme.of(
+                                                  context,
+                                                ).scaffoldBackgroundColor,
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                              child: const Center(
+                                                child:
+                                                    CircularProgressIndicator(
+                                                      color: AppColors.primary,
+                                                      strokeWidth: 2,
+                                                    ),
+                                              ),
+                                            );
+                                          },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
 
-                  // Created at info
-                  _DetailCard(
+                  // Action buttons
+                  Row(
                     children: [
-                      _DetailRow(
-                        icon: Icons.access_time_outlined,
-                        label: 'Created',
-                        value: DateFormatter.full(expense.createdAt),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _showDeleteDialog(context),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(
+                              color: AppColors.expense,
+                              width: 1.5,
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          icon: const Icon(
+                            Icons.delete_outline_rounded,
+                            color: AppColors.expense,
+                            size: 18,
+                          ),
+                          label: const Text(
+                            'Delete',
+                            style: TextStyle(
+                              color: AppColors.expense,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () => context.router.push(
+                            AddExpenseRoute(expense: expense),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          icon: const Icon(
+                            Icons.edit_outlined,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                          label: const Text(
+                            'Edit',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 32),
                 ],
               ),
             ),
@@ -141,12 +311,13 @@ class TransactionDetailPage extends StatelessWidget {
       context: context,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: Theme.of(context).cardColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
           'Delete Transaction',
           style: AppTextStyles.sectionTitle,
         ),
         content: Text(
-          'Delete "${expense.title}"?',
+          'Delete "${expense.title}"? This action cannot be undone.',
           style: AppTextStyles.bodySecondary,
         ),
         actions: [
@@ -166,7 +337,10 @@ class TransactionDetailPage extends StatelessWidget {
             },
             child: const Text(
               'Delete',
-              style: TextStyle(color: AppColors.expense),
+              style: TextStyle(
+                color: AppColors.expense,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -175,7 +349,7 @@ class TransactionDetailPage extends StatelessWidget {
   }
 }
 
-// Large hero section at the top showing amount and category
+// Hero section with gradient background using category color
 class _HeroSection extends StatelessWidget {
   final Color color;
   final IconData iconData;
@@ -197,38 +371,49 @@ class _HeroSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+      padding: const EdgeInsets.fromLTRB(20, 100, 20, 36),
       decoration: BoxDecoration(
-        // Subtle gradient using category color
+        // Rich gradient using category color
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            color.withOpacity(0.15),
+            color.withOpacity(0.9),
+            color.withOpacity(0.3),
             Theme.of(context).scaffoldBackgroundColor,
           ],
+          stops: const [0.0, 0.6, 1.0],
         ),
       ),
       child: Column(
         children: [
-          // Large category icon
+          // Large category icon with glow
           Container(
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
+              color: Colors.white.withOpacity(0.2),
               shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: color.withOpacity(0.4),
+                  blurRadius: 20,
+                  spreadRadius: 4,
+                ),
+              ],
             ),
-            child: Icon(iconData, color: color, size: 36),
+            child: Icon(iconData, color: Colors.white, size: 36),
           ),
           const SizedBox(height: 20),
 
           // Amount — large and prominent
           Text(
             '${isExpense ? '-' : '+'}${CurrencyFormatter.format(amount, showDecimals: true)}',
-            style: AppTextStyles.balanceAmount.copyWith(
-              color: isExpense ? AppColors.expense : AppColors.income,
+            style: const TextStyle(
               fontSize: 40,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              letterSpacing: -0.5,
             ),
           ),
           const SizedBox(height: 8),
@@ -236,24 +421,36 @@ class _HeroSection extends StatelessWidget {
           // Transaction title
           Text(
             title,
-            style: AppTextStyles.sectionTitle,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
 
           // Category chip
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
+              color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Text(
-              categoryName,
-              style: AppTextStyles.bodySecondary.copyWith(
-                color: color,
-                fontWeight: FontWeight.w500,
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(iconData, color: Colors.white, size: 14),
+                const SizedBox(width: 6),
+                Text(
+                  categoryName,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -262,7 +459,6 @@ class _HeroSection extends StatelessWidget {
   }
 }
 
-// Rounded card container for detail rows
 class _DetailCard extends StatelessWidget {
   final List<Widget> children;
 
@@ -274,13 +470,19 @@ class _DetailCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(children: children),
     );
   }
 }
 
-// Single detail row with icon, label, and value
 class _DetailRow extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -299,29 +501,28 @@ class _DetailRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // Icon with subtle background
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 18, color: AppColors.primary),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, size: 16, color: AppColors.primary),
+              ),
+              const SizedBox(width: 12),
+              Text(label, style: AppTextStyles.bodySecondary),
+            ],
           ),
-          const SizedBox(width: 12),
 
-          // Label
-          Text(label, style: AppTextStyles.bodySecondary),
-          const Spacer(),
-
-          // Value — right aligned
-          Flexible(
-            child: Text(
-              value,
-              style: AppTextStyles.cardTitle.copyWith(color: valueColor),
-              textAlign: TextAlign.right,
-            ),
+          Text(
+            value,
+            style: AppTextStyles.cardTitle.copyWith(color: valueColor),
+            textAlign: TextAlign.right,
           ),
         ],
       ),
@@ -329,13 +530,12 @@ class _DetailRow extends StatelessWidget {
   }
 }
 
-// Thin divider between rows
-class _Divider extends StatelessWidget {
+class _DetailDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Divider(
       height: 1,
-      indent: 16,
+      indent: 52,
       endIndent: 16,
       color: Theme.of(context).dividerColor,
     );

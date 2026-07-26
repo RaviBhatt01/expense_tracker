@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:collection/collection.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
@@ -9,6 +10,8 @@ import '../../domain/usecases/delete_expense.dart';
 import '../../domain/usecases/get_expenses.dart';
 import '../../domain/usecases/update_expense.dart';
 import 'expense_state.dart';
+
+enum SortOrder { newestFirst, oldestFirst, highestAmount, lowestAmount }
 
 @injectable
 class ExpenseCubit extends Cubit<ExpenseState> {
@@ -29,6 +32,9 @@ class ExpenseCubit extends Cubit<ExpenseState> {
   TransactionType? _filterType;
   String? _filterCategoryId;
 
+  SortOrder _sortOrder = SortOrder.newestFirst;
+  DateTimeRange? _dateRange;
+
   // Expose current filter state for UI to read
   TransactionType? get currentFilterType => _filterType;
   String? get currentFilterCategoryId => _filterCategoryId;
@@ -37,6 +43,10 @@ class ExpenseCubit extends Cubit<ExpenseState> {
   // Expose full unfiltered list for export
   // Export always exports everything regardless of active filters
   List<Expense> get allExpenses => _allExpenses;
+
+  // Expose for UI
+  SortOrder get currentSortOrder => _sortOrder;
+  DateTimeRange? get currentDateRange => _dateRange;
 
   ExpenseCubit({
     required AddExpenseUseCase addExpense,
@@ -83,19 +93,17 @@ class ExpenseCubit extends Cubit<ExpenseState> {
     _emitFiltered();
   }
 
-  /// Clear all search and filters
-  void clearFilters() {
-    _searchQuery = '';
-    _filterType = null;
-    _filterCategoryId = null;
+  /// Sort transactions
+  void sortBy(SortOrder order) {
+    _sortOrder = order;
     _emitFiltered();
   }
 
-  /// Returns true if any filter or search is active
-  bool get hasActiveFilters =>
-      _searchQuery.isNotEmpty ||
-      _filterType != null ||
-      _filterCategoryId != null;
+  /// Filter by date range
+  void filterByDateRange(DateTimeRange? range) {
+    _dateRange = range;
+    _emitFiltered();
+  }
 
   /// Apply all active filters and search to _allExpenses
   /// and emit new state
@@ -121,6 +129,31 @@ class ExpenseCubit extends Cubit<ExpenseState> {
           .toList();
     }
 
+    // Apply date range filter
+    if (_dateRange != null) {
+      filtered = filtered
+          .where(
+            (e) =>
+                e.date.isAfter(
+                  _dateRange!.start.subtract(const Duration(days: 1)),
+                ) &&
+                e.date.isBefore(_dateRange!.end.add(const Duration(days: 1))),
+          )
+          .toList();
+    }
+
+    // Apply sort order
+    switch (_sortOrder) {
+      case SortOrder.newestFirst:
+        filtered.sort((a, b) => b.date.compareTo(a.date));
+      case SortOrder.oldestFirst:
+        filtered.sort((a, b) => a.date.compareTo(b.date));
+      case SortOrder.highestAmount:
+        filtered.sort((a, b) => b.amount.compareTo(a.amount));
+      case SortOrder.lowestAmount:
+        filtered.sort((a, b) => a.amount.compareTo(b.amount));
+    }
+
     emit(
       ExpenseState.loaded(
         expenses: filtered,
@@ -129,6 +162,24 @@ class ExpenseCubit extends Cubit<ExpenseState> {
       ),
     );
   }
+
+  /// Clear all filters including date range and sort
+  void clearFilters() {
+    _searchQuery = '';
+    _filterType = null;
+    _filterCategoryId = null;
+    _dateRange = null;
+    _sortOrder = SortOrder.newestFirst;
+    _emitFiltered();
+  }
+
+  /// Returns true if any filter or search is active
+  bool get hasActiveFilters =>
+      _searchQuery.isNotEmpty ||
+      _filterType != null ||
+      _filterCategoryId != null ||
+      _dateRange != null ||
+      _sortOrder != SortOrder.newestFirst;
 
   Future<void> addExpense(Expense expense) async {
     final newExpense = expense.copyWith(
