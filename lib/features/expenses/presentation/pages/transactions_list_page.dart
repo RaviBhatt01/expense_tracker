@@ -26,6 +26,16 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
   final _searchFocusNode = FocusNode();
 
   @override
+  void initState() {
+    super.initState();
+    // Reset filters every time this page initializes
+    // Ensures "All" is active when switching to Transactions tab
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ExpenseCubit>().clearFilters();
+    });
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     _searchFocusNode.dispose();
@@ -1192,7 +1202,7 @@ class _EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(40),
+        padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -1208,7 +1218,7 @@ class _EmptyState extends StatelessWidget {
                 color: AppColors.primary.withOpacity(0.5),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             const Text(
               'No transactions yet',
               style: AppTextStyles.sectionTitle,

@@ -30,6 +30,7 @@ class AppRouter extends RootStackRouter {
         AutoRoute(page: HomeRoute.page, initial: true),
         AutoRoute(
           page: TransactionsRoute.page,
+          maintainState: false,
           children: [
             AutoRoute(page: TransactionsListRoute.page, initial: true),
             AutoRoute(page: TransactionDetailRoute.page),

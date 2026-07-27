@@ -32,7 +32,17 @@ class _BudgetsView extends StatelessWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Budgets', style: AppTextStyles.sectionTitle),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Budgets', style: AppTextStyles.sectionTitle),
+            const SizedBox(height: 4),
+            Text(
+              'Stay on track this month',
+              style: AppTextStyles.bodySecondary.copyWith(fontSize: 11),
+            ),
+          ],
+        ),
         actions: [
           // Add button in app bar — cleaner than FAB for this screen
           Padding(

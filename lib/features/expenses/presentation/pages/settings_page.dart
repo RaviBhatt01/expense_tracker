@@ -21,7 +21,17 @@ class SettingsPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Settings', style: AppTextStyles.sectionTitle),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Settings', style: AppTextStyles.sectionTitle),
+            const SizedBox(height: 4),
+            Text(
+              'Customize your experience',
+              style: AppTextStyles.bodySecondary.copyWith(fontSize: 11),
+            ),
+          ],
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),

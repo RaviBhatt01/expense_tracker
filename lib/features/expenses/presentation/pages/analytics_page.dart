@@ -34,7 +34,17 @@ class _AnalyticsView extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
-        title: const Text('Analytics', style: AppTextStyles.sectionTitle),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Analytics', style: AppTextStyles.sectionTitle),
+            const SizedBox(height: 4),
+            Text(
+              'Your money, visualized',
+              style: AppTextStyles.bodySecondary.copyWith(fontSize: 11),
+            ),
+          ],
+        ),
       ),
       body: BlocBuilder<AnalyticsCubit, AnalyticsState>(
         builder: (context, state) {
