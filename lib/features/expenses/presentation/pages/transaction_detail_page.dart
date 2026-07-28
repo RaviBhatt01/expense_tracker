@@ -1,6 +1,7 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:collection/collection.dart';
 
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -10,24 +11,59 @@ import '../../../../core/utils/date_formatter.dart';
 import '../../domain/entities/expense.dart';
 import '../cubit/category_cubit.dart';
 import '../cubit/expense_cubit.dart';
+import '../cubit/expense_state.dart';
 
 @RoutePage()
-class TransactionDetailPage extends StatelessWidget {
+class TransactionDetailPage extends StatefulWidget {
   // Expense passed directly — no need to fetch from Firebase again
   final Expense expense;
 
   const TransactionDetailPage({super.key, required this.expense});
 
   @override
+  State<TransactionDetailPage> createState() => _TransactionDetailPageState();
+}
+
+class _TransactionDetailPageState extends State<TransactionDetailPage> {
+  late Expense _expense;
+
+  @override
+  void initState() {
+    super.initState();
+    _expense = widget.expense;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // Listen to ExpenseCubit — update local expense when list changes
+    // This ensures detail page shows updated data after edit
+    return BlocListener<ExpenseCubit, ExpenseState>(
+      listener: (context, state) {
+        state.whenOrNull(
+          loaded: (expenses, _, __) {
+            // Find updated version of this expense in the new list
+            final updated = expenses.firstWhereOrNull(
+              (e) => e.id == _expense.id,
+            );
+            if (updated != null && updated != _expense) {
+              setState(() => _expense = updated);
+            }
+          },
+        );
+      },
+      child: _buildContent(context),
+    );
+  }
+
+  Widget _buildContent(BuildContext context) {
     // Look up category from already-loaded CategoryCubit
     final category = context.read<CategoryCubit>().getCategoryById(
-      expense.categoryId,
+      _expense.categoryId,
     );
 
     final color = category?.color ?? AppColors.primary;
     final iconData = category?.icon ?? Icons.category;
-    final isExpense = expense.type == TransactionType.expense;
+    final isExpense = _expense.type == TransactionType.expense;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -66,7 +102,7 @@ class TransactionDetailPage extends StatelessWidget {
               ),
             ),
             onPressed: () =>
-                context.router.push(AddExpenseRoute(expense: expense)),
+                context.router.push(AddExpenseRoute(expense: _expense)),
           ),
           // Delete button
           Padding(
@@ -97,9 +133,9 @@ class TransactionDetailPage extends StatelessWidget {
             _HeroSection(
               color: color,
               iconData: iconData,
-              amount: expense.amount,
+              amount: _expense.amount,
               isExpense: isExpense,
-              title: expense.title,
+              title: _expense.title,
               categoryName: category?.name ?? 'General',
             ),
 
@@ -114,7 +150,7 @@ class TransactionDetailPage extends StatelessWidget {
                       _DetailRow(
                         icon: Icons.calendar_today_outlined,
                         label: 'Date',
-                        value: DateFormatter.full(expense.date),
+                        value: DateFormatter.full(_expense.date),
                       ),
                       _DetailDivider(),
                       _DetailRow(
@@ -138,14 +174,14 @@ class TransactionDetailPage extends StatelessWidget {
                       _DetailRow(
                         icon: Icons.access_time_outlined,
                         label: 'Added on',
-                        value: DateFormatter.full(expense.createdAt),
+                        value: DateFormatter.full(_expense.createdAt),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
 
                   // Note section — only shown if note exists
-                  if (expense.note != null && expense.note!.isNotEmpty)
+                  if (_expense.note != null && _expense.note!.isNotEmpty)
                     Column(
                       children: [
                         _DetailCard(
@@ -153,7 +189,7 @@ class TransactionDetailPage extends StatelessWidget {
                             _DetailRow(
                               icon: Icons.notes_outlined,
                               label: 'Note',
-                              value: expense.note!,
+                              value: _expense.note!,
                             ),
                           ],
                         ),
@@ -162,8 +198,8 @@ class TransactionDetailPage extends StatelessWidget {
                     ),
 
                   // Receipt section — only shown if receipt exists
-                  if (expense.receiptUrl != null &&
-                      expense.receiptUrl!.isNotEmpty)
+                  if (_expense.receiptUrl != null &&
+                      _expense.receiptUrl!.isNotEmpty)
                     Column(
                       children: [
                         _DetailCard(
@@ -203,7 +239,7 @@ class TransactionDetailPage extends StatelessWidget {
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(12),
                                     child: Image.network(
-                                      expense.receiptUrl!,
+                                      _expense.receiptUrl!,
                                       width: double.infinity,
                                       fit: BoxFit.cover,
                                       loadingBuilder:
@@ -272,7 +308,7 @@ class TransactionDetailPage extends StatelessWidget {
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () => context.router.push(
-                            AddExpenseRoute(expense: expense),
+                            AddExpenseRoute(expense: _expense),
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
@@ -317,7 +353,7 @@ class TransactionDetailPage extends StatelessWidget {
           style: AppTextStyles.sectionTitle,
         ),
         content: Text(
-          'Delete "${expense.title}"? This action cannot be undone.',
+          'Delete "${_expense.title}"? This action cannot be undone.',
           style: AppTextStyles.bodySecondary,
         ),
         actions: [
@@ -331,7 +367,7 @@ class TransactionDetailPage extends StatelessWidget {
           TextButton(
             onPressed: () {
               Navigator.pop(dialogContext);
-              context.read<ExpenseCubit>().deleteExpense(expense.id);
+              context.read<ExpenseCubit>().deleteExpense(_expense.id);
               // Pop back to transactions list after delete
               context.maybePop();
             },
