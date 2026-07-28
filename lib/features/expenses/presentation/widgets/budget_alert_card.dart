@@ -16,7 +16,7 @@ class BudgetAlertCard extends StatelessWidget {
     return BlocBuilder<BudgetCubit, BudgetState>(
       builder: (context, state) {
         return state.maybeWhen(
-          loaded: (budgets) {
+          loaded: (budgets, totalMonthlyBudget, totalSpentThisMonth) {
             // Only show budgets that need attention
             // Warning: >= 70% used
             // Critical: over budget

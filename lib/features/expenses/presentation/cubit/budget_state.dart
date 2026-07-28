@@ -33,6 +33,8 @@ class BudgetState with _$BudgetState {
   const factory BudgetState.loading() = BudgetLoading;
   const factory BudgetState.loaded({
     required List<BudgetWithProgress> budgets,
+    @Default(0.0) double totalMonthlyBudget,
+    @Default(0.0) double totalSpentThisMonth,
   }) = BudgetLoaded;
   const factory BudgetState.error({required String message}) = BudgetError;
 }

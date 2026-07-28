@@ -23,6 +23,9 @@ class BudgetCubit extends Cubit<BudgetState> {
   final GetExpensesUseCase _getExpenses;
   final CategoryCubit _categoryCubit;
 
+  double _totalMonthlyBudget = 0.0;
+  double get totalMonthlyBudget => _totalMonthlyBudget;
+
   BudgetCubit({
     required GetBudgetsUseCase getBudgets,
     required AddBudgetUseCase addBudget,
@@ -38,6 +41,9 @@ class BudgetCubit extends Cubit<BudgetState> {
 
   Future<void> loadBudgets() async {
     emit(const BudgetState.loading());
+
+    // Load total budget alongside budgets
+    await loadTotalBudget();
 
     final results = await Future.wait([
       _getBudgets(NoParams()),
@@ -102,7 +108,18 @@ class BudgetCubit extends Cubit<BudgetState> {
       );
     }).toList();
 
-    emit(BudgetState.loaded(budgets: budgetsWithProgress));
+    // Calculate total spent this month across all expense categories
+    final totalSpent = expenses
+        .where((e) => e.type == TransactionType.expense)
+        .fold(0.0, (sum, e) => sum + e.amount);
+
+    emit(
+      BudgetState.loaded(
+        budgets: budgetsWithProgress,
+        totalMonthlyBudget: _totalMonthlyBudget,
+        totalSpentThisMonth: totalSpent,
+      ),
+    );
   }
 
   // Call this when CategoryCubit finishes loading
@@ -115,34 +132,64 @@ class BudgetCubit extends Cubit<BudgetState> {
     loadBudgets();
   }
 
+  // Load total monthly budget from Firestore
+  Future<void> loadTotalBudget() async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('settings')
+          .doc('monthly_budget')
+          .get();
+
+      if (doc.exists) {
+        _totalMonthlyBudget =
+            (doc.data()?['amount'] as num?)?.toDouble() ?? 0.0;
+      }
+    } catch (_) {
+      _totalMonthlyBudget = 0.0;
+    }
+  }
+
+  // Save total monthly budget to Firestore
+  Future<void> setTotalBudget(double amount) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('settings')
+          .doc('monthly_budget')
+          .set({'amount': amount});
+
+      _totalMonthlyBudget = amount;
+      // Reload to refresh state
+      await loadBudgets();
+    } catch (e) {
+      emit(BudgetState.error(message: e.toString()));
+    }
+  }
+
   Future<void> addBudget({
     required String categoryId,
     required double amount,
   }) async {
-    // Check if budget already exists for this category
     final currentState = state;
+
     if (currentState is BudgetLoaded) {
-      final exists = currentState.budgets.any(
+      // Check if budget already exists for this category
+      final existing = currentState.budgets.firstWhereOrNull(
         (b) => b.budget.categoryId == categoryId,
       );
 
-      if (exists) {
-        emit(
-          const BudgetState.error(
-            message: 'A budget already exists for this category',
-          ),
-        );
-        // Reload to restore state
-        await loadBudgets();
+      if (existing != null) {
+        // Budget exists — update it instead of rejecting
+        await updateBudget(id: existing.budget.id, amount: amount);
         return;
       }
     }
 
+    // No existing budget — create new one
     final budget = Budget(
       id: FirebaseFirestore.instance.collection('budgets').doc().id,
       categoryId: categoryId,
       amount: amount,
-      period: BudgetPeriod.monthly, // always monthly
+      period: BudgetPeriod.monthly,
       createdAt: DateTime.now(),
     );
 
