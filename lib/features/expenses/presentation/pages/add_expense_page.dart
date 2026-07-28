@@ -334,7 +334,7 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
         },
         listener: (context, state) {
           state.whenOrNull(
-            loaded: (_, __, ___) {
+            loaded: (_, _, __, ___, ____, _____, ______) {
               if (!mounted) return;
               setState(() => _isSubmitting = false);
               context.maybePop();

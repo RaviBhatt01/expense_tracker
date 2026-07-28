@@ -11,8 +11,6 @@ import '../../domain/usecases/get_expenses.dart';
 import '../../domain/usecases/update_expense.dart';
 import 'expense_state.dart';
 
-enum SortOrder { newestFirst, oldestFirst, highestAmount, lowestAmount }
-
 @injectable
 class ExpenseCubit extends Cubit<ExpenseState> {
   final AddExpenseUseCase _addExpense;
@@ -159,6 +157,10 @@ class ExpenseCubit extends Cubit<ExpenseState> {
         expenses: filtered,
         totalExpenses: _calculateTotal(filtered, TransactionType.expense),
         totalIncome: _calculateTotal(filtered, TransactionType.income),
+        filterType: _filterType,
+        filterCategoryId: _filterCategoryId,
+        dateRange: _dateRange,
+        sortOrder: _sortOrder,
       ),
     );
   }

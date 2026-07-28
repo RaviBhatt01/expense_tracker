@@ -40,7 +40,7 @@ class _HomeView extends StatelessWidget {
               loading: () => const Center(
                 child: CircularProgressIndicator(color: AppColors.primary),
               ),
-              loaded: (expenses, totalExpenses, totalIncome) {
+              loaded: (expenses, totalExpenses, totalIncome, filterType, filterCategoryId, dateRange, sortOrder) {
                 final balance = totalIncome - totalExpenses;
 
                 return BlocBuilder<CategoryCubit, CategoryState>(

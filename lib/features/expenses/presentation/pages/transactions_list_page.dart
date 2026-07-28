@@ -53,7 +53,8 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
           builder: (context, state) {
             // Subtitle shows total entries count
             final count = state.maybeWhen(
-              loaded: (expenses, _, __) => expenses.length,
+              loaded: (expenses, _, __, ___, ____, _____, ______) =>
+                  expenses.length,
               orElse: () => 0,
             );
             return Column(
@@ -72,9 +73,27 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
         actions: [
           BlocBuilder<ExpenseCubit, ExpenseState>(
             builder: (context, state) {
-              // Read hasActiveFilters inside builder so it
-              // re-evaluates every time state changes
-              final hasFilters = context.read<ExpenseCubit>().hasActiveFilters;
+              final hasFilters = state.maybeWhen(
+                loaded:
+                    (
+                      _,
+                      __,
+                      ___,
+                      filterType,
+                      filterCategoryId,
+                      dateRange,
+                      sortOrder,
+                    ) =>
+                        filterType != null ||
+                        filterCategoryId != null ||
+                        dateRange != null ||
+                        sortOrder != SortOrder.newestFirst ||
+                        context
+                            .read<ExpenseCubit>()
+                            .currentSearchQuery
+                            .isNotEmpty,
+                orElse: () => false,
+              );
               if (!hasFilters) return const SizedBox();
               return TextButton(
                 onPressed: () {
@@ -151,18 +170,31 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
             _FilterChipsRow(onFilterTap: () => _showFilterSheet(context)),
 
             // ── Active Filter Summary Card ─────────────────
-            // Shows when any filter is active
             BlocBuilder<ExpenseCubit, ExpenseState>(
               builder: (context, state) {
-                final cubit = context.read<ExpenseCubit>();
-                if (!cubit.hasActiveFilters) return const SizedBox();
                 return state.maybeWhen(
-                  loaded: (expenses, totalExpenses, totalIncome) =>
-                      _FilterSummaryCard(
-                        count: expenses.length,
-                        totalExpenses: totalExpenses,
-                        totalIncome: totalIncome,
-                      ),
+                  loaded:
+                      (
+                        expenses,
+                        totalExpenses,
+                        totalIncome,
+                        filterType,
+                        filterCategoryId,
+                        dateRange,
+                        sortOrder,
+                      ) {
+                        final description = _buildFilterDescription(
+                          context: context,
+                          sortOrder: sortOrder,
+                          dateRange: dateRange,
+                          categoryId: filterCategoryId,
+                        );
+                        return _FilterSummaryCard(
+                          description: description,
+                          totalExpenses: totalExpenses,
+                          totalIncome: totalIncome,
+                        );
+                      },
                   orElse: () => const SizedBox(),
                 );
               },
@@ -179,18 +211,27 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                         color: AppColors.primary,
                       ),
                     ),
-                    loaded: (expenses, totalExpenses, totalIncome) {
-                      if (expenses.isEmpty) {
-                        return _EmptyState(
-                          onAddTap: () =>
-                              context.router.push(AddExpenseRoute()),
-                        );
-                      }
-                      return _TransactionsList(
-                        expenses: expenses,
-                        pageContext: context,
-                      );
-                    },
+                    loaded:
+                        (
+                          expenses,
+                          totalExpenses,
+                          totalIncome,
+                          filterType,
+                          filterCategoryId,
+                          dateRange,
+                          sortOrder,
+                        ) {
+                          if (expenses.isEmpty) {
+                            return _EmptyState(
+                              onAddTap: () =>
+                                  context.router.push(AddExpenseRoute()),
+                            );
+                          }
+                          return _TransactionsList(
+                            expenses: expenses,
+                            pageContext: context,
+                          );
+                        },
                     error: (message) => Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -251,7 +292,15 @@ class _FilterChipsRow extends StatelessWidget {
     return BlocBuilder<ExpenseCubit, ExpenseState>(
       builder: (context, state) {
         final cubit = context.read<ExpenseCubit>();
-        final currentType = cubit.currentFilterType;
+        final currentType = state.maybeWhen(
+          loaded: (_, __, ___, filterType, ____, _____, ______) => filterType,
+          orElse: () => null,
+        );
+        final hasAdvanced = state.maybeWhen(
+          loaded: (_, __, ___, ____, _____, dateRange, ______) =>
+              dateRange != null,
+          orElse: () => false,
+        );
 
         return SizedBox(
           height: 52,
@@ -265,14 +314,12 @@ class _FilterChipsRow extends StatelessWidget {
                     vertical: 8,
                   ),
                   children: [
-                    // All — selected when no type filter active
                     _FilterChip(
                       label: 'All',
                       isSelected: currentType == null,
                       onTap: () => cubit.filterByType(null),
                     ),
                     const SizedBox(width: 8),
-                    // Expense filter
                     _FilterChip(
                       label: 'Expense',
                       icon: Icons.arrow_upward_rounded,
@@ -281,7 +328,6 @@ class _FilterChipsRow extends StatelessWidget {
                       onTap: () => cubit.filterByType(TransactionType.expense),
                     ),
                     const SizedBox(width: 8),
-                    // Income filter
                     _FilterChip(
                       label: 'Income',
                       icon: Icons.arrow_downward_rounded,
@@ -292,48 +338,40 @@ class _FilterChipsRow extends StatelessWidget {
                   ],
                 ),
               ),
-              // Filter icon button on far right
               Padding(
                 padding: const EdgeInsets.only(right: 16),
                 child: GestureDetector(
                   onTap: onFilterTap,
-                  child: BlocBuilder<ExpenseCubit, ExpenseState>(
-                    builder: (context, state) {
-                      // Show active dot when advanced filters are on
-                      final hasAdvanced =
-                          context.read<ExpenseCubit>().currentDateRange != null;
-                      return Stack(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).cardColor,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Icon(
-                              Icons.tune_rounded,
-                              color: hasAdvanced
-                                  ? AppColors.primary
-                                  : AppColors.textSecondary,
-                              size: 20,
+                  child: Stack(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardColor,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          Icons.tune_rounded,
+                          color: hasAdvanced
+                              ? AppColors.primary
+                              : AppColors.textSecondary,
+                          size: 20,
+                        ),
+                      ),
+                      if (hasAdvanced)
+                        Positioned(
+                          right: 6,
+                          top: 6,
+                          child: Container(
+                            width: 7,
+                            height: 7,
+                            decoration: const BoxDecoration(
+                              color: AppColors.primary,
+                              shape: BoxShape.circle,
                             ),
                           ),
-                          if (hasAdvanced)
-                            Positioned(
-                              right: 6,
-                              top: 6,
-                              child: Container(
-                                width: 7,
-                                height: 7,
-                                decoration: const BoxDecoration(
-                                  color: AppColors.primary,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                            ),
-                        ],
-                      );
-                    },
+                        ),
+                    ],
                   ),
                 ),
               ),
@@ -402,12 +440,12 @@ class _FilterChip extends StatelessWidget {
 
 // Filter summary card — shows when filters are active
 class _FilterSummaryCard extends StatelessWidget {
-  final int count;
+  final String description;
   final double totalExpenses;
   final double totalIncome;
 
   const _FilterSummaryCard({
-    required this.count,
+    required this.description,
     required this.totalExpenses,
     required this.totalIncome,
   });
@@ -424,17 +462,23 @@ class _FilterSummaryCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.filter_alt_rounded, color: AppColors.primary, size: 16),
+          const Icon(
+            Icons.swap_vert_rounded,
+            color: AppColors.primary,
+            size: 16,
+          ),
           const SizedBox(width: 8),
-          Text(
-            '$count results',
-            style: AppTextStyles.bodySecondary.copyWith(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w600,
+          Expanded(
+            child: Text(
+              description,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.bodySecondary.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
-          const Spacer(),
-          // Income summary
+          const SizedBox(width: 12),
           Row(
             children: [
               Container(
@@ -456,7 +500,6 @@ class _FilterSummaryCard extends StatelessWidget {
             ],
           ),
           const SizedBox(width: 12),
-          // Expense summary
           Row(
             children: [
               Container(
@@ -481,6 +524,77 @@ class _FilterSummaryCard extends StatelessWidget {
       ),
     );
   }
+}
+
+String _buildFilterDescription({
+  required BuildContext context,
+  required SortOrder sortOrder,
+  required DateTimeRange? dateRange,
+  required String? categoryId,
+}) {
+  final parts = <String>[];
+
+  if (categoryId != null) {
+    final category = context.read<CategoryCubit>().getCategoryById(categoryId);
+    if (category != null) parts.add(category.name);
+  }
+
+  if (dateRange != null) {
+    parts.add(_describeDateRange(dateRange));
+  }
+
+  parts.add(_describeSortOrder(sortOrder));
+
+  return parts.join(' · ');
+}
+
+String _describeSortOrder(SortOrder order) {
+  switch (order) {
+    case SortOrder.newestFirst:
+      return 'Newest First';
+    case SortOrder.oldestFirst:
+      return 'Oldest First';
+    case SortOrder.highestAmount:
+      return 'Highest Amount';
+    case SortOrder.lowestAmount:
+      return 'Lowest Amount';
+  }
+}
+
+String _describeDateRange(DateTimeRange range) {
+  final now = DateTime.now();
+  final daysDiff = now.difference(range.start).inDays;
+  final endIsRecent = now.difference(range.end).inDays.abs() <= 1;
+
+  if (endIsRecent) {
+    if ((daysDiff - 7).abs() <= 1) return 'Last 7 Days';
+    if ((daysDiff - 30).abs() <= 1) return 'Last 30 Days';
+    if (range.start.year == now.year &&
+        range.start.month == now.month &&
+        range.start.day == 1) {
+      return 'This Month';
+    }
+  }
+
+  return '${_formatRangeDate(range.start)} - ${_formatRangeDate(range.end)}';
+}
+
+String _formatRangeDate(DateTime date) {
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  return '${months[date.month - 1]} ${date.day}';
 }
 
 // Groups transactions by date — each group has a date header + list

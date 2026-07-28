@@ -40,7 +40,7 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
     return BlocListener<ExpenseCubit, ExpenseState>(
       listener: (context, state) {
         state.whenOrNull(
-          loaded: (expenses, _, __) {
+          loaded: (expenses, _, __, ___, ____, _____, ______) {
             // Find updated version of this expense in the new list
             final updated = expenses.firstWhereOrNull(
               (e) => e.id == _expense.id,
