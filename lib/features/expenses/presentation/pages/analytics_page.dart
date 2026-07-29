@@ -217,7 +217,7 @@ class _PeriodFilter extends StatelessWidget {
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.symmetric(vertical: 15),
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: isSelected
@@ -237,8 +237,10 @@ class _PeriodFilter extends StatelessWidget {
                   child: Text(
                     label,
                     style: TextStyle(
-                      color: isSelected ? Colors.white : AppColors.background,
-                      fontSize: 13,
+                      color: isSelected
+                          ? Colors.white
+                          : AppColors.textSecondary,
+                      fontSize: 14,
                       fontWeight: isSelected
                           ? FontWeight.bold
                           : FontWeight.normal,
