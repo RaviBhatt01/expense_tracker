@@ -15,7 +15,7 @@ class ExpenseState with _$ExpenseState {
     @Default(0.0) double totalExpenses,
     @Default(0.0) double totalIncome,
     TransactionType? filterType,
-    String? filterCategoryId,
+    @Default(<String>{}) Set<String> filterCategoryIds,
     DateTimeRange? dateRange,
     @Default(SortOrder.newestFirst) SortOrder sortOrder,
   }) = ExpenseLoaded;

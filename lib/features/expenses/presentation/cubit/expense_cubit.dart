@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
@@ -21,28 +23,27 @@ class ExpenseCubit extends Cubit<ExpenseState> {
   // Full unfiltered list — source of truth for filtering
   List<Expense> _allExpenses = [];
 
-  // Undo delete state
-  Expense? _lastDeletedExpense;
-  bool _undoRequested = false;
+  // Pending (soft) deletes — keyed by expense id so multiple deletes
+  // in flight can each be undone independently within their own window
+  final Map<String, Expense> _pendingDeletes = {};
+  final Map<String, Timer> _pendingDeleteTimers = {};
 
   // Current search and filter state
   String _searchQuery = '';
   TransactionType? _filterType;
-  String? _filterCategoryId;
+  Set<String> _filterCategoryIds = {};
 
   SortOrder _sortOrder = SortOrder.newestFirst;
   DateTimeRange? _dateRange;
 
   // Expose current filter state for UI to read
   TransactionType? get currentFilterType => _filterType;
-  String? get currentFilterCategoryId => _filterCategoryId;
+  Set<String> get currentFilterCategoryIds => _filterCategoryIds;
   String get currentSearchQuery => _searchQuery;
 
   // Expose full unfiltered list for export
-  // Export always exports everything regardless of active filters
   List<Expense> get allExpenses => _allExpenses;
 
-  // Expose for UI
   SortOrder get currentSortOrder => _sortOrder;
   DateTimeRange? get currentDateRange => _dateRange;
 
@@ -65,9 +66,7 @@ class ExpenseCubit extends Cubit<ExpenseState> {
     result.fold(
       (failure) => emit(ExpenseState.error(message: failure.message)),
       (expenses) {
-        // Store full list
         _allExpenses = expenses;
-        // Apply any existing filters
         _emitFiltered();
       },
     );
@@ -85,9 +84,15 @@ class ExpenseCubit extends Cubit<ExpenseState> {
     _emitFiltered();
   }
 
-  /// Filter by category
-  void filterByCategory(String? categoryId) {
-    _filterCategoryId = categoryId;
+  /// Replace the full set of selected category filters (multi-select)
+  void filterByCategories(Set<String> categoryIds) {
+    _filterCategoryIds = categoryIds;
+    _emitFiltered();
+  }
+
+  /// Remove a single category from the active filter (chip "X")
+  void removeCategoryFilter(String categoryId) {
+    _filterCategoryIds = {..._filterCategoryIds}..remove(categoryId);
     _emitFiltered();
   }
 
@@ -103,31 +108,26 @@ class ExpenseCubit extends Cubit<ExpenseState> {
     _emitFiltered();
   }
 
-  /// Apply all active filters and search to _allExpenses
-  /// and emit new state
+  /// Apply all active filters and search to _allExpenses and emit new state
   void _emitFiltered() {
     var filtered = List<Expense>.from(_allExpenses);
 
-    // Apply search filter
     if (_searchQuery.isNotEmpty) {
       filtered = filtered
           .where((e) => e.title.toLowerCase().contains(_searchQuery))
           .toList();
     }
 
-    // Apply type filter
     if (_filterType != null) {
       filtered = filtered.where((e) => e.type == _filterType).toList();
     }
 
-    // Apply category filter
-    if (_filterCategoryId != null) {
+    if (_filterCategoryIds.isNotEmpty) {
       filtered = filtered
-          .where((e) => e.categoryId == _filterCategoryId)
+          .where((e) => _filterCategoryIds.contains(e.categoryId))
           .toList();
     }
 
-    // Apply date range filter
     if (_dateRange != null) {
       filtered = filtered
           .where(
@@ -140,7 +140,6 @@ class ExpenseCubit extends Cubit<ExpenseState> {
           .toList();
     }
 
-    // Apply sort order
     switch (_sortOrder) {
       case SortOrder.newestFirst:
         filtered.sort((a, b) => b.date.compareTo(a.date));
@@ -158,7 +157,7 @@ class ExpenseCubit extends Cubit<ExpenseState> {
         totalExpenses: _calculateTotal(filtered, TransactionType.expense),
         totalIncome: _calculateTotal(filtered, TransactionType.income),
         filterType: _filterType,
-        filterCategoryId: _filterCategoryId,
+        filterCategoryIds: _filterCategoryIds,
         dateRange: _dateRange,
         sortOrder: _sortOrder,
       ),
@@ -169,7 +168,7 @@ class ExpenseCubit extends Cubit<ExpenseState> {
   void clearFilters() {
     _searchQuery = '';
     _filterType = null;
-    _filterCategoryId = null;
+    _filterCategoryIds = {};
     _dateRange = null;
     _sortOrder = SortOrder.newestFirst;
     _emitFiltered();
@@ -179,7 +178,7 @@ class ExpenseCubit extends Cubit<ExpenseState> {
   bool get hasActiveFilters =>
       _searchQuery.isNotEmpty ||
       _filterType != null ||
-      _filterCategoryId != null ||
+      _filterCategoryIds.isNotEmpty ||
       _dateRange != null ||
       _sortOrder != SortOrder.newestFirst;
 
@@ -206,38 +205,46 @@ class ExpenseCubit extends Cubit<ExpenseState> {
     );
   }
 
+  /// Soft-deletes immediately (optimistic UI) and schedules the permanent
+  /// backend delete 6s later, unless undone before then. Keyed per-id so
+  /// multiple in-flight deletes never clash with each other.
   Future<void> deleteExpense(String id) async {
-    final currentState = state;
-    if (currentState is! ExpenseLoaded) return;
+    final expense = _allExpenses.firstWhereOrNull((e) => e.id == id);
+    if (expense == null) return;
 
-    _lastDeletedExpense = _allExpenses.firstWhereOrNull((e) => e.id == id);
-    if (_lastDeletedExpense == null) return;
-
-    // Optimistic update — remove from both lists
+    // Optimistic update — remove immediately
     _allExpenses = _allExpenses.where((e) => e.id != id).toList();
-    _undoRequested = false;
+    _pendingDeletes[id] = expense;
     _emitFiltered();
 
-    await Future.delayed(const Duration(seconds: 6));
-
-    if (!_undoRequested) {
-      await _deleteExpense(id);
-      _lastDeletedExpense = null;
-    }
+    _pendingDeleteTimers[id]?.cancel();
+    _pendingDeleteTimers[id] = Timer(const Duration(seconds: 6), () async {
+      _pendingDeleteTimers.remove(id);
+      final pending = _pendingDeletes.remove(id);
+      if (pending != null) {
+        await _deleteExpense(id);
+      }
+    });
   }
 
-  Future<void> undoDelete() async {
-    if (_lastDeletedExpense == null) return;
+  void undoDelete(String id) {
+    _pendingDeleteTimers.remove(id)?.cancel();
 
-    _undoRequested = true;
-    final expenseToRestore = _lastDeletedExpense!;
-    _lastDeletedExpense = null;
+    final expense = _pendingDeletes.remove(id);
+    if (expense == null) return;
 
-    // Restore to full list and re-sort
-    _allExpenses = [..._allExpenses, expenseToRestore]
+    _allExpenses = [..._allExpenses, expense]
       ..sort((a, b) => b.date.compareTo(a.date));
 
     _emitFiltered();
+  }
+
+  @override
+  Future<void> close() {
+    for (final timer in _pendingDeleteTimers.values) {
+      timer.cancel();
+    }
+    return super.close();
   }
 
   double _calculateTotal(List<Expense> expenses, TransactionType type) {

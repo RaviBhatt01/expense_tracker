@@ -28,8 +28,6 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
   @override
   void initState() {
     super.initState();
-    // Reset filters every time this page initializes
-    // Ensures "All" is active when switching to Transactions tab
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ExpenseCubit>().clearFilters();
     });
@@ -51,7 +49,6 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
         elevation: 0,
         title: BlocBuilder<ExpenseCubit, ExpenseState>(
           builder: (context, state) {
-            // Subtitle shows total entries count
             final count = state.maybeWhen(
               loaded: (expenses, _, __, ___, ____, _____, ______) =>
                   expenses.length,
@@ -80,12 +77,12 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                       __,
                       ___,
                       filterType,
-                      filterCategoryId,
+                      filterCategoryIds,
                       dateRange,
                       sortOrder,
                     ) =>
                         filterType != null ||
-                        filterCategoryId != null ||
+                        filterCategoryIds.isNotEmpty ||
                         dateRange != null ||
                         sortOrder != SortOrder.newestFirst ||
                         context
@@ -119,7 +116,6 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
         child: const Icon(Icons.add, color: AppColors.iconOnColor),
       ),
       body: GestureDetector(
-        // Dismiss keyboard when tapping anywhere outside search
         onTap: () => _searchFocusNode.unfocus(),
         behavior: HitTestBehavior.translucent,
         child: Column(
@@ -129,8 +125,7 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
               child: TextField(
                 controller: _searchController,
-                focusNode: _searchFocusNode, // ← attach focus node
-                // Prevent auto focus when returning to page
+                focusNode: _searchFocusNode,
                 autofocus: false,
                 onChanged: (query) =>
                     context.read<ExpenseCubit>().search(query),
@@ -166,39 +161,14 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
               ),
             ),
 
-            // ── Filter Chips + Filter Icon ────────────────
+            // ── Type Chips + Filter Icon ──────────────────
             _FilterChipsRow(onFilterTap: () => _showFilterSheet(context)),
 
-            // ── Active Filter Summary Card ─────────────────
-            BlocBuilder<ExpenseCubit, ExpenseState>(
-              builder: (context, state) {
-                return state.maybeWhen(
-                  loaded:
-                      (
-                        expenses,
-                        totalExpenses,
-                        totalIncome,
-                        filterType,
-                        filterCategoryId,
-                        dateRange,
-                        sortOrder,
-                      ) {
-                        final description = _buildFilterDescription(
-                          context: context,
-                          sortOrder: sortOrder,
-                          dateRange: dateRange,
-                          categoryId: filterCategoryId,
-                        );
-                        return _FilterSummaryCard(
-                          description: description,
-                          totalExpenses: totalExpenses,
-                          totalIncome: totalIncome,
-                        );
-                      },
-                  orElse: () => const SizedBox(),
-                );
-              },
-            ),
+            // ── Selected Category Chips (removable) ───────
+            const _SelectedCategoryChipsRow(),
+
+            // ── Sort / Date Range Summary ─────────────────
+            const _SortSummaryRow(),
 
             // ── Transactions List ─────────────────────────
             Expanded(
@@ -217,7 +187,7 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
                           totalExpenses,
                           totalIncome,
                           filterType,
-                          filterCategoryId,
+                          filterCategoryIds,
                           dateRange,
                           sortOrder,
                         ) {
@@ -281,7 +251,7 @@ class _TransactionsListPageState extends State<TransactionsListPage> {
   }
 }
 
-// Filter chips row with filter icon on the right
+// Type chips row (All / Income / Expense) + filter icon with badge count
 class _FilterChipsRow extends StatelessWidget {
   final VoidCallback onFilterTap;
 
@@ -296,10 +266,12 @@ class _FilterChipsRow extends StatelessWidget {
           loaded: (_, __, ___, filterType, ____, _____, ______) => filterType,
           orElse: () => null,
         );
-        final hasAdvanced = state.maybeWhen(
-          loaded: (_, __, ___, ____, _____, dateRange, ______) =>
-              dateRange != null,
-          orElse: () => false,
+        final badgeCount = state.maybeWhen(
+          loaded: (_, __, ___, ____, filterCategoryIds, dateRange, sortOrder) =>
+              filterCategoryIds.length +
+              (dateRange != null ? 1 : 0) +
+              (sortOrder != SortOrder.newestFirst ? 1 : 0),
+          orElse: () => 0,
         );
 
         return SizedBox(
@@ -321,19 +293,19 @@ class _FilterChipsRow extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     _FilterChip(
-                      label: 'Expense',
-                      icon: Icons.arrow_upward_rounded,
-                      color: AppColors.expense,
-                      isSelected: currentType == TransactionType.expense,
-                      onTap: () => cubit.filterByType(TransactionType.expense),
-                    ),
-                    const SizedBox(width: 8),
-                    _FilterChip(
                       label: 'Income',
                       icon: Icons.arrow_downward_rounded,
                       color: AppColors.income,
                       isSelected: currentType == TransactionType.income,
                       onTap: () => cubit.filterByType(TransactionType.income),
+                    ),
+                    const SizedBox(width: 8),
+                    _FilterChip(
+                      label: 'Expense',
+                      icon: Icons.arrow_upward_rounded,
+                      color: AppColors.expense,
+                      isSelected: currentType == TransactionType.expense,
+                      onTap: () => cubit.filterByType(TransactionType.expense),
                     ),
                   ],
                 ),
@@ -343,6 +315,7 @@ class _FilterChipsRow extends StatelessWidget {
                 child: GestureDetector(
                   onTap: onFilterTap,
                   child: Stack(
+                    clipBehavior: Clip.none,
                     children: [
                       Container(
                         padding: const EdgeInsets.all(8),
@@ -352,22 +325,34 @@ class _FilterChipsRow extends StatelessWidget {
                         ),
                         child: Icon(
                           Icons.tune_rounded,
-                          color: hasAdvanced
+                          color: badgeCount > 0
                               ? AppColors.primary
                               : AppColors.textSecondary,
                           size: 20,
                         ),
                       ),
-                      if (hasAdvanced)
+                      if (badgeCount > 0)
                         Positioned(
-                          right: 6,
-                          top: 6,
+                          right: -4,
+                          top: -4,
                           child: Container(
-                            width: 7,
-                            height: 7,
+                            padding: const EdgeInsets.all(3),
+                            constraints: const BoxConstraints(
+                              minWidth: 16,
+                              minHeight: 16,
+                            ),
                             decoration: const BoxDecoration(
                               color: AppColors.primary,
                               shape: BoxShape.circle,
+                            ),
+                            child: Text(
+                              '$badgeCount',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
@@ -438,87 +423,81 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-// Filter summary card — shows when filters are active
-class _FilterSummaryCard extends StatelessWidget {
-  final String description;
-  final double totalExpenses;
-  final double totalIncome;
+// Selected category chips — each removable with an "X"
+class _SelectedCategoryChipsRow extends StatelessWidget {
+  const _SelectedCategoryChipsRow();
 
-  const _FilterSummaryCard({
-    required this.description,
-    required this.totalExpenses,
-    required this.totalIncome,
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<ExpenseCubit, ExpenseState>(
+      builder: (context, state) {
+        final categoryIds = state.maybeWhen(
+          loaded: (_, __, ___, ____, filterCategoryIds, _____, ______) =>
+              filterCategoryIds,
+          orElse: () => <String>{},
+        );
+        if (categoryIds.isEmpty) return const SizedBox();
+
+        final categoryCubit = context.read<CategoryCubit>();
+        final cubit = context.read<ExpenseCubit>();
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: categoryIds.map((id) {
+              final category = categoryCubit.getCategoryById(id);
+              return _RemovableChip(
+                label: category?.name ?? 'Unknown',
+                color: category?.color ?? AppColors.primary,
+                onRemove: () => cubit.removeCategoryFilter(id),
+              );
+            }).toList(),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _RemovableChip extends StatelessWidget {
+  final String label;
+  final Color color;
+  final VoidCallback onRemove;
+
+  const _RemovableChip({
+    required this.label,
+    required this.color,
+    required this.onRemove,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.only(left: 12, right: 6, top: 6, bottom: 6),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primary.withOpacity(0.2), width: 1),
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.4), width: 1),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.swap_vert_rounded,
-            color: AppColors.primary,
-            size: 16,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              description,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.bodySecondary.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w600,
-              ),
+          Text(
+            label,
+            style: AppTextStyles.bodySecondary.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(width: 12),
-          Row(
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: AppColors.income,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                CurrencyFormatter.compact(totalIncome),
-                style: AppTextStyles.bodySecondary.copyWith(
-                  color: AppColors.income,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 12),
-          Row(
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: AppColors.expense,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                CurrencyFormatter.compact(totalExpenses),
-                style: AppTextStyles.bodySecondary.copyWith(
-                  color: AppColors.expense,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+          InkWell(
+            onTap: onRemove,
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: Icon(Icons.close_rounded, size: 14, color: color),
+            ),
           ),
         ],
       ),
@@ -526,25 +505,82 @@ class _FilterSummaryCard extends StatelessWidget {
   }
 }
 
-String _buildFilterDescription({
-  required BuildContext context,
+// Sort + date range summary row, with running totals
+class _SortSummaryRow extends StatelessWidget {
+  const _SortSummaryRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<ExpenseCubit, ExpenseState>(
+      builder: (context, state) {
+        return state.maybeWhen(
+          loaded:
+              (_, totalExpenses, totalIncome, __, ___, dateRange, sortOrder) {
+                final description = _describeFilters(
+                  sortOrder: sortOrder,
+                  dateRange: dateRange,
+                );
+                return Container(
+                  margin: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.swap_vert_rounded,
+                        color: AppColors.textSecondary,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          description,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.bodySecondary.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        '+${CurrencyFormatter.compact(totalIncome)}',
+                        style: AppTextStyles.bodySecondary.copyWith(
+                          color: AppColors.income,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '-${CurrencyFormatter.compact(totalExpenses)}',
+                        style: AppTextStyles.bodySecondary.copyWith(
+                          color: AppColors.expense,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+          orElse: () => const SizedBox(),
+        );
+      },
+    );
+  }
+}
+
+String _describeFilters({
   required SortOrder sortOrder,
   required DateTimeRange? dateRange,
-  required String? categoryId,
 }) {
   final parts = <String>[];
-
-  if (categoryId != null) {
-    final category = context.read<CategoryCubit>().getCategoryById(categoryId);
-    if (category != null) parts.add(category.name);
-  }
-
-  if (dateRange != null) {
-    parts.add(_describeDateRange(dateRange));
-  }
-
+  if (dateRange != null) parts.add(_describeDateRange(dateRange));
   parts.add(_describeSortOrder(sortOrder));
-
   return parts.join(' · ');
 }
 
@@ -579,6 +615,26 @@ String _describeDateRange(DateTimeRange range) {
   return '${_formatRangeDate(range.start)} - ${_formatRangeDate(range.end)}';
 }
 
+/// Reverse of [_describeDateRange] — used to restore the filter sheet's
+/// selected preset when it's reopened with an existing date range.
+String? _detectDatePreset(DateTimeRange? range) {
+  if (range == null) return null;
+  final now = DateTime.now();
+  final daysDiff = now.difference(range.start).inDays;
+  final endIsRecent = now.difference(range.end).inDays.abs() <= 1;
+
+  if (endIsRecent) {
+    if ((daysDiff - 7).abs() <= 1) return 'last7';
+    if ((daysDiff - 30).abs() <= 1) return 'last30';
+    if (range.start.year == now.year &&
+        range.start.month == now.month &&
+        range.start.day == 1) {
+      return 'thisMonth';
+    }
+  }
+  return 'custom';
+}
+
 String _formatRangeDate(DateTime date) {
   const months = [
     'Jan',
@@ -606,7 +662,6 @@ class _TransactionsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Group expenses by date (day only, ignoring time)
     final grouped = <String, List<Expense>>{};
     for (final expense in expenses) {
       final dateKey =
@@ -614,7 +669,6 @@ class _TransactionsList extends StatelessWidget {
       grouped.putIfAbsent(dateKey, () => []).add(expense);
     }
 
-    // Build list of date sections
     final sections = grouped.entries.toList();
 
     return RefreshIndicator(
@@ -627,10 +681,8 @@ class _TransactionsList extends StatelessWidget {
         itemBuilder: (context, sectionIndex) {
           final section = sections[sectionIndex];
           final sectionExpenses = section.value;
-          // Use the first expense's date for the header
           final date = sectionExpenses.first.date;
 
-          // Daily totals for this section
           final dayExpense = sectionExpenses
               .where((e) => e.type == TransactionType.expense)
               .fold(0.0, (sum, e) => sum + e.amount);
@@ -641,7 +693,6 @@ class _TransactionsList extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Date Header ──────────────────────────
               Padding(
                 padding: const EdgeInsets.only(top: 16, bottom: 8),
                 child: Row(
@@ -654,7 +705,6 @@ class _TransactionsList extends StatelessWidget {
                       ),
                     ),
                     const Spacer(),
-                    // Daily summary — income and expense
                     if (dayIncome > 0)
                       Text(
                         '+${CurrencyFormatter.compact(dayIncome)}',
@@ -678,8 +728,6 @@ class _TransactionsList extends StatelessWidget {
                   ],
                 ),
               ),
-
-              // ── Transactions Card for this date ───────
               Container(
                 decoration: BoxDecoration(
                   color: Theme.of(context).cardColor,
@@ -768,11 +816,12 @@ class _TransactionsList extends StatelessWidget {
   }
 
   void _deleteWithUndo(BuildContext context, Expense expense) {
-    context.read<ExpenseCubit>().deleteExpense(expense.id);
+    // Grab the messenger directly off the page's own context — going
+    // through context.router.navigatorKey.currentContext could resolve to
+    // a different ScaffoldMessenger instance and leave the snackbar stuck.
+    final messenger = ScaffoldMessenger.of(context);
 
-    final messenger = ScaffoldMessenger.of(
-      context.router.navigatorKey.currentContext!,
-    );
+    context.read<ExpenseCubit>().deleteExpense(expense.id);
 
     messenger
       ..hideCurrentSnackBar()
@@ -790,8 +839,7 @@ class _TransactionsList extends StatelessWidget {
             label: 'UNDO',
             textColor: AppColors.primary,
             onPressed: () {
-              context.read<ExpenseCubit>().undoDelete();
-              messenger.hideCurrentSnackBar();
+              context.read<ExpenseCubit>().undoDelete(expense.id);
             },
           ),
         ),
@@ -799,8 +847,6 @@ class _TransactionsList extends StatelessWidget {
   }
 }
 
-// Individual swipe to delete item — no card decoration
-// Card is handled by the date group container
 class _SwipeToDeleteItem extends StatelessWidget {
   final Expense expense;
   final VoidCallback onDelete;
@@ -837,7 +883,6 @@ class _SwipeToDeleteItem extends StatelessWidget {
           size: 24,
         ),
       ),
-      // Return false — we handle removal through cubit
       confirmDismiss: (_) async {
         onDelete();
         return false;
@@ -851,7 +896,6 @@ class _SwipeToDeleteItem extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                // Category icon
                 Container(
                   width: 40,
                   height: 40,
@@ -875,7 +919,6 @@ class _SwipeToDeleteItem extends StatelessWidget {
                     ],
                   ),
                 ),
-                // Amount
                 Text(
                   '${isExpense ? '-' : '+'}${CurrencyFormatter.format(expense.amount)}',
                   style: isExpense
@@ -910,24 +953,18 @@ class _FilterSheetState extends State<_FilterSheet> {
     super.initState();
     final cubit = context.read<ExpenseCubit>();
     _selectedSort = cubit.currentSortOrder;
-    _selectedCategoryIds = cubit.currentFilterCategoryId != null
-        ? {cubit.currentFilterCategoryId!}
-        : {};
-    _selectedDatePreset = null;
+    _selectedCategoryIds = Set<String>.from(cubit.currentFilterCategoryIds);
+    // Restore date range and its matching preset so reopening the sheet
+    // doesn't silently clear what was already applied.
+    _customRange = cubit.currentDateRange;
+    _selectedDatePreset = _detectDatePreset(_customRange);
   }
 
   void _applyFilters() {
     final cubit = context.read<ExpenseCubit>();
     cubit.sortBy(_selectedSort);
-
-    // Apply category filter — use first selected if any
-    cubit.filterByCategory(
-      _selectedCategoryIds.isNotEmpty ? _selectedCategoryIds.first : null,
-    );
-
-    // Apply date range
+    cubit.filterByCategories(_selectedCategoryIds);
     cubit.filterByDateRange(_customRange);
-
     Navigator.pop(context);
   }
 
@@ -968,7 +1005,6 @@ class _FilterSheetState extends State<_FilterSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Handle
             Center(
               child: Container(
                 width: 40,
@@ -980,8 +1016,6 @@ class _FilterSheetState extends State<_FilterSheet> {
               ),
             ),
             const SizedBox(height: 20),
-
-            // Header
             Row(
               children: [
                 Container(
@@ -1002,7 +1036,6 @@ class _FilterSheetState extends State<_FilterSheet> {
             ),
             const SizedBox(height: 24),
 
-            // ── Sort Card ──────────────────────────────
             const Text('SORT BY', style: AppTextStyles.label),
             const SizedBox(height: 10),
             Container(
@@ -1048,7 +1081,6 @@ class _FilterSheetState extends State<_FilterSheet> {
             ),
             const SizedBox(height: 20),
 
-            // ── Date Range Card ────────────────────────
             const Text('DATE RANGE', style: AppTextStyles.label),
             const SizedBox(height: 10),
             Wrap(
@@ -1078,6 +1110,7 @@ class _FilterSheetState extends State<_FilterSheet> {
                       context: context,
                       firstDate: DateTime(2020),
                       lastDate: DateTime.now(),
+                      initialDateRange: _customRange,
                       builder: (context, child) => Theme(
                         data: ThemeData.dark().copyWith(
                           colorScheme: const ColorScheme.dark(
@@ -1095,11 +1128,19 @@ class _FilterSheetState extends State<_FilterSheet> {
                     }
                   },
                 ),
+                if (_customRange != null)
+                  _DatePresetChip(
+                    label: 'Clear',
+                    isSelected: false,
+                    onTap: () => setState(() {
+                      _selectedDatePreset = null;
+                      _customRange = null;
+                    }),
+                  ),
               ],
             ),
             const SizedBox(height: 20),
 
-            // ── Categories ─────────────────────────────
             const Text('CATEGORIES', style: AppTextStyles.label),
             const SizedBox(height: 10),
             BlocBuilder<CategoryCubit, CategoryState>(
@@ -1174,7 +1215,6 @@ class _FilterSheetState extends State<_FilterSheet> {
             ),
             const SizedBox(height: 28),
 
-            // Apply button
             SizedBox(
               width: double.infinity,
               height: 52,
