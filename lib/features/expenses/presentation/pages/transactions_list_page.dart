@@ -1368,18 +1368,6 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.08),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.receipt_long_outlined,
-                size: 48,
-                color: AppColors.primary.withOpacity(0.5),
-              ),
-            ),
             const SizedBox(height: 20),
             const Text(
               'No transactions yet',

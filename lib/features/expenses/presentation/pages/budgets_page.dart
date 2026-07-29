@@ -80,7 +80,7 @@ class _BudgetsView extends StatelessWidget {
                     context.read<BudgetCubit>().loadBudgets(),
                 child: ListView.builder(
                   padding: const EdgeInsets.fromLTRB(0, 0, 0, 100),
-                  itemCount: budgets.isEmpty ? 2 : budgets.length + 1,
+                  itemCount: budgets.isEmpty ? 3 : budgets.length + 2,
                   itemBuilder: (context, index) {
                     if (index == 0) {
                       // Total monthly budget card at top
@@ -97,50 +97,52 @@ class _BudgetsView extends StatelessWidget {
                         },
                       );
                     }
-                    if (budgets.isEmpty) {
+                    if (index == 1) {
+                      // Category Budgets header row
                       return Padding(
-                        padding: const EdgeInsets.only(top: 24),
+                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Category Budgets',
+                              style: AppTextStyles.cardTitle,
+                            ),
+                            TextButton.icon(
+                              onPressed: () => context.router.push(
+                                const CategoryManagementRoute(),
+                              ),
+                              icon: const Icon(
+                                Icons.settings_outlined,
+                                size: 14,
+                                color: AppColors.primary,
+                              ),
+                              label: const Text(
+                                'Manage Categories',
+                                style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    if (budgets.isEmpty) {
+                      // Empty state below header
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 12),
                         child: _EmptyState(
                           onAddTap: () => _showAddBudgetSheet(context),
                         ),
                       );
                     }
+                    // Individual budget cards (index starts at 2, so budgets index is 2 - 2 = 0)
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Category Budgets',
-                                style: AppTextStyles.cardTitle,
-                              ),
-                              TextButton.icon(
-                                onPressed: () => context.router.push(
-                                  const CategoryManagementRoute(),
-                                ),
-                                icon: const Icon(
-                                  Icons.settings_outlined,
-                                  size: 14,
-                                  color: AppColors.primary,
-                                ),
-                                label: const Text(
-                                  'Manage Categories',
-                                  style: TextStyle(
-                                    color: AppColors.primary,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          _BudgetCard(item: budgets[index - 1]),
-                        ],
-                      ),
+                      child: _BudgetCard(item: budgets[index - 2]),
                     );
                   },
                 ),
@@ -1131,18 +1133,6 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.account_balance_wallet_outlined,
-                size: 52,
-                color: AppColors.primary,
-              ),
-            ),
             const SizedBox(height: 24),
             const Text('No budgets yet', style: AppTextStyles.sectionTitle),
             const SizedBox(height: 8),

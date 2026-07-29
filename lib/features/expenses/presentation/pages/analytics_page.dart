@@ -803,15 +803,9 @@ class _SpendingByCategoryCardState extends State<_SpendingByCategoryCard> {
       return _AnalyticsCard(
         title: 'Spending by Category',
         subtitle: 'No expense data for this period',
-        child: const Padding(
-          padding: EdgeInsets.all(40),
-          child: Center(
-            child: Text(
-              'Add some expenses to see breakdown',
-              style: AppTextStyles.bodySecondary,
-              textAlign: TextAlign.center,
-            ),
-          ),
+        child: _EmptyChartState(
+          icon: Icons.add_outlined,
+          message: 'Add some expenses to see breakdown',
         ),
       );
     }
