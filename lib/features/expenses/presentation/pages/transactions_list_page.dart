@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -443,17 +445,21 @@ class _SelectedCategoryChipsRow extends StatelessWidget {
 
         return Padding(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: categoryIds.map((id) {
-              final category = categoryCubit.getCategoryById(id);
-              return _RemovableChip(
-                label: category?.name ?? 'Unknown',
-                color: category?.color ?? AppColors.primary,
-                onRemove: () => cubit.removeCategoryFilter(id),
-              );
-            }).toList(),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.start,
+              children: categoryIds.map((id) {
+                final category = categoryCubit.getCategoryById(id);
+                return _RemovableChip(
+                  label: category?.name ?? 'Unknown',
+                  color: category?.color ?? AppColors.primary,
+                  onRemove: () => cubit.removeCategoryFilter(id),
+                );
+              }).toList(),
+            ),
           ),
         );
       },
@@ -474,32 +480,32 @@ class _RemovableChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.only(left: 12, right: 6, top: 6, bottom: 6),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.4), width: 1),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: AppTextStyles.bodySecondary.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
+    return InkWell(
+      onTap: onRemove,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.only(left: 12, right: 6, top: 6, bottom: 6),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withOpacity(0.4), width: 1),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: AppTextStyles.bodySecondary.copyWith(
+                color: color,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
-          InkWell(
-            onTap: onRemove,
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
+            Padding(
               padding: const EdgeInsets.all(4),
               child: Icon(Icons.close_rounded, size: 14, color: color),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -816,34 +822,36 @@ class _TransactionsList extends StatelessWidget {
   }
 
   void _deleteWithUndo(BuildContext context, Expense expense) {
-    // Grab the messenger directly off the page's own context — going
-    // through context.router.navigatorKey.currentContext could resolve to
-    // a different ScaffoldMessenger instance and leave the snackbar stuck.
     final messenger = ScaffoldMessenger.of(context);
 
     context.read<ExpenseCubit>().deleteExpense(expense.id);
 
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text('"${expense.title}" deleted'),
-          duration: const Duration(seconds: 6),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.fromLTRB(20, 0, 20, 80),
-          backgroundColor: const Color(0xFF323232),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          action: SnackBarAction(
-            label: 'UNDO',
-            textColor: AppColors.primary,
-            onPressed: () {
-              context.read<ExpenseCubit>().undoDelete(expense.id);
-            },
-          ),
+    messenger.hideCurrentSnackBar();
+    final controller = messenger.showSnackBar(
+      SnackBar(
+        content: Text('"${expense.title}" deleted'),
+        // Keep duration as a fallback, but we drive dismissal ourselves below
+        duration: const Duration(seconds: 6),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(20, 0, 20, 80),
+        backgroundColor: const Color(0xFF323232),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        action: SnackBarAction(
+          label: 'UNDO',
+          textColor: AppColors.primary,
+          onPressed: () {
+            context.read<ExpenseCubit>().undoDelete(expense.id);
+          },
         ),
-      );
+      ),
+    );
+
+    // Don't rely on SnackBar's built-in auto-dismiss (Flutter disables it
+    // when accessible navigation / screen-reader mode is active). Drive it
+    // manually so it always vanishes on time regardless of platform/a11y state.
+    Timer(const Duration(seconds: 6), () {
+      controller.close();
+    });
   }
 }
 
