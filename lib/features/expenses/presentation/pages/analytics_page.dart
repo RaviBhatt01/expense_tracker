@@ -614,6 +614,7 @@ class _WeeklyTrendCardState extends State<_WeeklyTrendCard> {
       0,
       (max, d) => d.amount > max ? d.amount : max,
     );
+    final lastIndex = widget.dailySpending.length - 1;
 
     // Check if all days have zero spending
     final hasData = widget.dailySpending.any((d) => d.amount > 0);
@@ -628,6 +629,8 @@ class _WeeklyTrendCardState extends State<_WeeklyTrendCard> {
                 height: 180,
                 child: LineChart(
                   LineChartData(
+                    minX: 0,
+                    maxX: lastIndex.toDouble(),
                     minY: 0,
                     maxY: maxAmount * 1.3,
                     lineTouchData: LineTouchData(
@@ -675,10 +678,20 @@ class _WeeklyTrendCardState extends State<_WeeklyTrendCard> {
                       bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
+                          // CRITICAL: without an explicit interval, fl_chart
+                          // computes its own tick spacing from pixel width,
+                          // which can land on fractional x-values (e.g. 2.0
+                          // and 2.3) that both round to the same day index —
+                          // producing duplicate labels like "Tue Tue Wed Wed".
+                          // interval: 1 plus the whole-number guard below
+                          // makes each day render exactly once.
+                          interval: 1,
                           getTitlesWidget: (value, meta) {
+                            if (value != value.roundToDouble()) {
+                              return const SizedBox();
+                            }
                             final index = value.toInt();
-                            if (index < 0 ||
-                                index >= widget.dailySpending.length) {
+                            if (index < 0 || index > lastIndex) {
                               return const SizedBox();
                             }
                             return Padding(
@@ -741,8 +754,8 @@ class _WeeklyTrendCardState extends State<_WeeklyTrendCard> {
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
-                              AppColors.primary.withOpacity(0.3),
-                              AppColors.primary.withOpacity(0.0),
+                              AppColors.primary.withValues(alpha: 0.3),
+                              AppColors.primary.withValues(alpha: 0.0),
                             ],
                           ),
                         ),

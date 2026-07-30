@@ -40,82 +40,102 @@ class _HomeView extends StatelessWidget {
               loading: () => const Center(
                 child: CircularProgressIndicator(color: AppColors.primary),
               ),
-              loaded: (expenses, totalExpenses, totalIncome, filterType, filterCategoryId, dateRange, sortOrder) {
-                final balance = totalIncome - totalExpenses;
+              loaded:
+                  (
+                    expenses,
+                    totalExpenses,
+                    totalIncome,
+                    filterType,
+                    filterCategoryId,
+                    dateRange,
+                    sortOrder,
+                  ) {
+                    final balance = totalIncome - totalExpenses;
 
-                return BlocBuilder<CategoryCubit, CategoryState>(
-                  builder: (context, categoryState) {
-                    // Wait for categories to load before rendering
-                    // This ensures category icons show correctly on first render
-                    if (categoryState is! CategoryLoaded) {
-                      return const Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.primary,
-                        ),
-                      );
-                    }
-
-                    return CustomScrollView(
-                      slivers: [
-                        // ── App Bar ──────────────────────────
-                        SliverToBoxAdapter(child: _HomeAppBar()),
-
-                        // ── Balance + Summary Card ────────────
-                        SliverToBoxAdapter(
-                          child: _BalanceSummaryCard(
-                            balance: balance,
-                            totalIncome: totalIncome,
-                            totalExpenses: totalExpenses,
-                          ),
-                        ),
-                        const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-                        // ── Budget Alerts ────────────────────
-                        const SliverToBoxAdapter(child: BudgetAlertCard()),
-
-                        // ── Weekly Spending Chart ─────────────
-                        SliverToBoxAdapter(child: _WeeklySpendingCard()),
-                        const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-                        // ── Recent Transactions ───────────────
-                        SliverToBoxAdapter(
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(20, 8, 12, 8),
-                            child: Row(
-                              children: [
-                                const Text(
-                                  'Recent Transactions',
-                                  style: AppTextStyles.sectionTitle,
-                                ),
-                                const Spacer(),
-                                // Navigate by switching tab — not pushing
-                                // Pushing would stack transactions on home tab
-                                TextButton(
-                                  onPressed: () => AutoTabsRouter.of(
-                                    context,
-                                  ).setActiveIndex(1),
-                                  child: Text(
-                                    'See All',
-                                    style: TextStyle(
-                                      color: AppColors.primary,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                    return BlocBuilder<CategoryCubit, CategoryState>(
+                      builder: (context, categoryState) {
+                        // Wait for categories to load before rendering
+                        // This ensures category icons show correctly on first render
+                        if (categoryState is! CategoryLoaded) {
+                          return const Center(
+                            child: CircularProgressIndicator(
+                              color: AppColors.primary,
                             ),
-                          ),
-                        ),
-                        RecentTransactionsList(
-                          expenses: expenses.take(5).toList(),
-                        ),
-                        const SliverToBoxAdapter(child: SizedBox(height: 100)),
-                      ],
+                          );
+                        }
+
+                        return CustomScrollView(
+                          slivers: [
+                            // ── App Bar ──────────────────────────
+                            SliverToBoxAdapter(child: _HomeAppBar()),
+
+                            // ── Balance + Summary Card ────────────
+                            SliverToBoxAdapter(
+                              child: _BalanceSummaryCard(
+                                balance: balance,
+                                totalIncome: totalIncome,
+                                totalExpenses: totalExpenses,
+                              ),
+                            ),
+                            const SliverToBoxAdapter(
+                              child: SizedBox(height: 16),
+                            ),
+
+                            // ── Budget Alerts ────────────────────
+                            const SliverToBoxAdapter(child: BudgetAlertCard()),
+
+                            // ── Weekly Spending Chart ─────────────
+                            SliverToBoxAdapter(child: _WeeklySpendingCard()),
+                            const SliverToBoxAdapter(
+                              child: SizedBox(height: 16),
+                            ),
+
+                            // ── Recent Transactions ───────────────
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  20,
+                                  8,
+                                  12,
+                                  8,
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Text(
+                                      'Recent Transactions',
+                                      style: AppTextStyles.sectionTitle,
+                                    ),
+                                    const Spacer(),
+                                    // Navigate by switching tab — not pushing
+                                    // Pushing would stack transactions on home tab
+                                    TextButton(
+                                      onPressed: () => AutoTabsRouter.of(
+                                        context,
+                                      ).setActiveIndex(1),
+                                      child: Text(
+                                        'See All',
+                                        style: TextStyle(
+                                          color: AppColors.primary,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            RecentTransactionsList(
+                              expenses: expenses.take(5).toList(),
+                            ),
+                            const SliverToBoxAdapter(
+                              child: SizedBox(height: 100),
+                            ),
+                          ],
+                        );
+                      },
                     );
                   },
-                );
-              },
               error: (message) => Center(
                 child: Text(
                   message,
@@ -429,7 +449,7 @@ class _WeeklySpendingCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -493,17 +513,18 @@ class _WeeklySpendingCard extends StatelessWidget {
 
                       if (!hasData) {
                         return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 28),
+                          padding: const EdgeInsets.symmetric(vertical: 32),
                           child: Center(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                            child: Column(
                               children: [
                                 Icon(
                                   Icons.show_chart_rounded,
-                                  color: AppColors.primary.withOpacity(0.3),
-                                  size: 40,
+                                  color: AppColors.primary.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                  size: 36,
                                 ),
-                                const SizedBox(width: 12),
+                                const SizedBox(height: 10),
                                 Text(
                                   'No spending this week',
                                   style: AppTextStyles.bodySecondary,
@@ -514,8 +535,41 @@ class _WeeklySpendingCard extends StatelessWidget {
                         );
                       }
 
+                      final weekTotal = dailySpending.fold<double>(
+                        0,
+                        (sum, d) => sum + d.amount,
+                      );
+
                       return Padding(
-                        padding: const EdgeInsets.fromLTRB(8, 16, 16, 16),
+                        padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
+                        child: Text(
+                          CurrencyFormatter.format(weekTotal),
+                          style: AppTextStyles.sectionTitle.copyWith(
+                            color: AppColors.primary,
+                            fontSize: 22,
+                          ),
+                        ),
+                      );
+                    },
+                orElse: () => const SizedBox(),
+              ),
+
+              state.maybeWhen(
+                loaded:
+                    (
+                      _,
+                      __,
+                      ___,
+                      ____,
+                      _____,
+                      monthlyComparisons,
+                      dailySpending,
+                    ) {
+                      final hasData = dailySpending.any((d) => d.amount > 0);
+                      if (!hasData) return const SizedBox();
+
+                      return Padding(
+                        padding: const EdgeInsets.fromLTRB(8, 8, 16, 16),
                         child: SizedBox(
                           height: 150,
                           child: _MiniLineChart(dailySpending: dailySpending),
@@ -552,9 +606,12 @@ class _MiniLineChart extends StatelessWidget {
       0,
       (max, d) => d.amount > max ? d.amount : max,
     );
+    final lastIndex = dailySpending.length - 1;
 
     return LineChart(
       LineChartData(
+        minX: 0,
+        maxX: lastIndex.toDouble(),
         minY: 0,
         maxY: maxAmount * 1.3,
         // Disable touch on home screen — full interactivity in analytics
@@ -573,11 +630,19 @@ class _MiniLineChart extends StatelessWidget {
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
+              // CRITICAL: without an explicit interval, fl_chart computes
+              // its own tick spacing from pixel width, which can land on
+              // fractional x-values (e.g. 2.0 and 2.3) that both round to
+              // the same day index — producing duplicate labels like
+              // "Tue Tue Wed Wed". Forcing interval: 1 plus the whole-number
+              // guard below makes each day render exactly once.
+              interval: 1,
               getTitlesWidget: (value, meta) {
+                // Only draw a label on exact whole-number ticks that map
+                // to a real data index — silently drop any others.
+                if (value != value.roundToDouble()) return const SizedBox();
                 final index = value.toInt();
-                if (index < 0 || index >= dailySpending.length) {
-                  return const SizedBox();
-                }
+                if (index < 0 || index > lastIndex) return const SizedBox();
                 return Padding(
                   padding: const EdgeInsets.only(top: 6),
                   child: Text(
@@ -617,8 +682,8 @@ class _MiniLineChart extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  AppColors.primary.withOpacity(0.25),
-                  AppColors.primary.withOpacity(0.0),
+                  AppColors.primary.withValues(alpha: 0.25),
+                  AppColors.primary.withValues(alpha: 0.0),
                 ],
               ),
             ),
