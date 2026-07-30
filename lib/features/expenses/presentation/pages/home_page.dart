@@ -7,6 +7,7 @@ import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../domain/entities/expense.dart';
 import '../cubit/analytics_cubit.dart';
 import '../cubit/category_cubit.dart';
 import '../cubit/expense_cubit.dart';
@@ -79,6 +80,14 @@ class _HomeView extends StatelessWidget {
                             ),
                             const SliverToBoxAdapter(
                               child: SizedBox(height: 16),
+                            ),
+
+                            // ── Quick Add Shortcuts ────────────────────
+                            const SliverToBoxAdapter(
+                              child: QuickAddShortcuts(),
+                            ),
+                            const SliverToBoxAdapter(
+                              child: SizedBox(height: 8),
                             ),
 
                             // ── Budget Alerts ────────────────────
@@ -701,6 +710,149 @@ class _MiniLineChart extends StatelessWidget {
       ),
       duration: const Duration(milliseconds: 600),
       curve: Curves.easeInOut,
+    );
+  }
+}
+
+/// Horizontal row of quick-add shortcuts for the user's most-frequently
+/// used expense categories — tapping one opens Add Transaction with that
+/// category (and type) prefilled.
+class QuickAddShortcuts extends StatelessWidget {
+  const QuickAddShortcuts({super.key});
+
+  static const int _maxShortcuts = 5;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<ExpenseCubit, ExpenseState>(
+      builder: (context, state) {
+        return state.maybeWhen(
+          loaded: (_, __, ___, ____, _____, ______, _______) {
+            final cubit = context.read<ExpenseCubit>();
+            final categoryCubit = context.read<CategoryCubit>();
+
+            final topCategoryIds = _mostFrequentExpenseCategoryIds(
+              cubit.allExpenses,
+              limit: _maxShortcuts,
+            );
+
+            if (topCategoryIds.isEmpty) return const SizedBox();
+
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 0, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Quick Add', style: AppTextStyles.label),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 40,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.only(right: 20),
+                      itemCount: topCategoryIds.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      itemBuilder: (context, index) {
+                        final category = categoryCubit.getCategoryById(
+                          topCategoryIds[index],
+                        );
+                        if (category == null) return const SizedBox();
+
+                        return _QuickAddChip(
+                          label: category.name,
+                          icon: category.icon,
+                          color: category.color,
+                          onTap: () => context.router.push(
+                            AddExpenseRoute(
+                              initialCategoryId: category.id,
+                              initialType: TransactionType.expense,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+          orElse: () => const SizedBox(),
+        );
+      },
+    );
+  }
+
+  /// Ranks expense-type categories by usage frequency across all
+  /// transactions (unaffected by active filters) and returns the top
+  /// [limit] category ids, most-used first.
+  List<String> _mostFrequentExpenseCategoryIds(
+    List<Expense> allExpenses, {
+    required int limit,
+  }) {
+    final counts = <String, int>{};
+    for (final expense in allExpenses) {
+      if (expense.type != TransactionType.expense) continue;
+      counts.update(
+        expense.categoryId,
+        (count) => count + 1,
+        ifAbsent: () => 1,
+      );
+    }
+
+    final sortedIds = counts.keys.toList()
+      ..sort((a, b) => counts[b]!.compareTo(counts[a]!));
+
+    return sortedIds.take(limit).toList();
+  }
+}
+
+class _QuickAddChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _QuickAddChip({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Theme.of(context).cardColor,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 12),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: AppTextStyles.bodySecondary.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 2),
+              Icon(Icons.add_rounded, color: color, size: 14),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

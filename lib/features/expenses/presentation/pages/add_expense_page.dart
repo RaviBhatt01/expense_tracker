@@ -22,21 +22,38 @@ class AddExpensePage extends StatelessWidget {
   // Optional expense — if provided, we are in edit mode
   final Expense? expense;
 
+  // Optional prefill — used by quick-add shortcuts on the home screen.
+  // Ignored when `expense` is provided (edit mode always wins).
+  final String? initialCategoryId;
+  final TransactionType? initialType;
+
   const AddExpensePage({
     super.key,
     this.expense, // null = add mode, non-null = edit mode
+    this.initialCategoryId,
+    this.initialType,
   });
 
   @override
   Widget build(BuildContext context) {
-    return _AddExpenseView(expense: expense);
+    return _AddExpenseView(
+      expense: expense,
+      initialCategoryId: initialCategoryId,
+      initialType: initialType,
+    );
   }
 }
 
 class _AddExpenseView extends StatefulWidget {
   final Expense? expense;
+  final String? initialCategoryId;
+  final TransactionType? initialType;
 
-  const _AddExpenseView({this.expense});
+  const _AddExpenseView({
+    this.expense,
+    this.initialCategoryId,
+    this.initialType,
+  });
 
   @override
   State<_AddExpenseView> createState() => _AddExpenseViewState();
@@ -75,11 +92,14 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
           : '',
     );
     _noteController = TextEditingController(text: widget.expense?.note ?? '');
-    _selectedType = widget.expense?.type ?? TransactionType.expense;
+    _selectedType =
+        widget.expense?.type ?? widget.initialType ?? TransactionType.expense;
     _selectedDate = widget.expense?.date ?? DateTime.now();
 
     // Pre-select category and receipt when editing
-    _selectedCategoryId = widget.expense?.categoryId;
+    // Falls back to quick-add prefill category when adding fresh
+    _selectedCategoryId =
+        widget.expense?.categoryId ?? widget.initialCategoryId;
     _receiptUrl = widget.expense?.receiptUrl;
   }
 

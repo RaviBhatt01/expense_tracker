@@ -13,12 +13,22 @@ part of 'app_router.dart';
 /// generated route for
 /// [AddExpensePage]
 class AddExpenseRoute extends PageRouteInfo<AddExpenseRouteArgs> {
-  AddExpenseRoute({Key? key, Expense? expense, List<PageRouteInfo>? children})
-    : super(
-        AddExpenseRoute.name,
-        args: AddExpenseRouteArgs(key: key, expense: expense),
-        initialChildren: children,
-      );
+  AddExpenseRoute({
+    Key? key,
+    Expense? expense,
+    String? initialCategoryId,
+    TransactionType? initialType,
+    List<PageRouteInfo>? children,
+  }) : super(
+         AddExpenseRoute.name,
+         args: AddExpenseRouteArgs(
+           key: key,
+           expense: expense,
+           initialCategoryId: initialCategoryId,
+           initialType: initialType,
+         ),
+         initialChildren: children,
+       );
 
   static const String name = 'AddExpenseRoute';
 
@@ -28,21 +38,35 @@ class AddExpenseRoute extends PageRouteInfo<AddExpenseRouteArgs> {
       final args = data.argsAs<AddExpenseRouteArgs>(
         orElse: () => const AddExpenseRouteArgs(),
       );
-      return AddExpensePage(key: args.key, expense: args.expense);
+      return AddExpensePage(
+        key: args.key,
+        expense: args.expense,
+        initialCategoryId: args.initialCategoryId,
+        initialType: args.initialType,
+      );
     },
   );
 }
 
 class AddExpenseRouteArgs {
-  const AddExpenseRouteArgs({this.key, this.expense});
+  const AddExpenseRouteArgs({
+    this.key,
+    this.expense,
+    this.initialCategoryId,
+    this.initialType,
+  });
 
   final Key? key;
 
   final Expense? expense;
 
+  final String? initialCategoryId;
+
+  final TransactionType? initialType;
+
   @override
   String toString() {
-    return 'AddExpenseRouteArgs{key: $key, expense: $expense}';
+    return 'AddExpenseRouteArgs{key: $key, expense: $expense, initialCategoryId: $initialCategoryId, initialType: $initialType}';
   }
 }
 
