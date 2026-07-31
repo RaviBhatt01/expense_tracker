@@ -12,6 +12,8 @@ import '../../features/expenses/presentation/pages/main_page.dart';
 import '../../features/expenses/presentation/pages/analytics_page.dart';
 import '../../features/expenses/presentation/pages/budgets_page.dart';
 import '../../features/expenses/presentation/pages/settings_page.dart';
+import '../../features/onboarding/presentation/pages/splash_page.dart';
+import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 
 // This annotation triggers auto_route code generation
 // It generates AppRouter class with all navigation logic
@@ -21,10 +23,11 @@ part 'app_router.gr.dart';
 class AppRouter extends RootStackRouter {
   @override
   List<AutoRoute> get routes => [
-    // MainPage wraps all tab routes
+    // Splash is the first screen — initial: true
+    AutoRoute(page: SplashRoute.page, initial: true),
+    AutoRoute(page: OnboardingRoute.page),
     AutoRoute(
       page: MainRoute.page,
-      initial: true,
       // These are the nested tab routes inside MainPage
       children: [
         AutoRoute(page: HomeRoute.page, initial: true),

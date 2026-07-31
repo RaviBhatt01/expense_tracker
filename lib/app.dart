@@ -6,6 +6,7 @@ import 'package:expense_tracker/features/expenses/domain/usecases/get_expenses.d
 import 'package:expense_tracker/features/expenses/presentation/cubit/analytics_cubit.dart';
 import 'package:expense_tracker/features/expenses/presentation/cubit/category_cubit.dart';
 import 'package:expense_tracker/features/expenses/presentation/cubit/expense_cubit.dart';
+import 'package:expense_tracker/features/onboarding/presentation/cubit/onboarding_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -26,6 +27,7 @@ class App extends StatelessWidget {
       providers: [
         // Theme cubit — controls dark/light mode
         BlocProvider(create: (context) => ThemeCubit()),
+        BlocProvider(create: (context) => OnboardingCubit()),
         BlocProvider(
           lazy: false,
           create: (context) => getIt<CategoryCubit>()..initializeCategories(),
