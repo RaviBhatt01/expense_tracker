@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/currency_cubit.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../domain/entities/expense.dart';
 import '../cubit/analytics_cubit.dart';
@@ -86,12 +87,12 @@ class _HomeView extends StatelessWidget {
                             const SliverToBoxAdapter(
                               child: QuickAddShortcuts(),
                             ),
-                            const SliverToBoxAdapter(
-                              child: SizedBox(height: 8),
-                            ),
 
                             // ── Budget Alerts ────────────────────
                             const SliverToBoxAdapter(child: BudgetAlertCard()),
+                            const SliverToBoxAdapter(
+                              child: SizedBox(height: 16),
+                            ),
 
                             // ── Weekly Spending Chart ─────────────
                             SliverToBoxAdapter(child: _WeeklySpendingCard()),
@@ -267,6 +268,7 @@ class _BalanceSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<CurrencyCubit>(); // rebuild when currency changes
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
@@ -409,6 +411,7 @@ class _BalanceSummaryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<CurrencyCubit>(); // rebuild when currency changes
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -449,6 +452,7 @@ class _BalanceSummaryItem extends StatelessWidget {
 class _WeeklySpendingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    context.watch<CurrencyCubit>(); // rebuild when currency changes
     return BlocBuilder<AnalyticsCubit, AnalyticsState>(
       builder: (context, state) {
         return Container(
@@ -743,7 +747,7 @@ class QuickAddShortcuts extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Quick Add', style: AppTextStyles.label),
+                  const Text('Quick Add', style: AppTextStyles.bodySecondary),
                   const SizedBox(height: 10),
                   SizedBox(
                     height: 40,

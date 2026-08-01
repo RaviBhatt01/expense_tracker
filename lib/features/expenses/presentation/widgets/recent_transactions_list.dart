@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/currency_cubit.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../domain/entities/category.dart';
@@ -16,6 +17,7 @@ class RecentTransactionsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<CurrencyCubit>(); // rebuild when currency changes
     if (expenses.isEmpty) {
       return const SliverToBoxAdapter(
         child: Center(

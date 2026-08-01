@@ -5,9 +5,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/currency_cubit.dart';
 import '../../../../core/theme/theme_cubit.dart';
-import '../../../../core/utils/app_constants.dart';
 import '../../../../core/utils/csv_exporter.dart';
+import '../../../../core/utils/currency_service.dart';
 import '../cubit/category_cubit.dart';
 import '../cubit/expense_cubit.dart';
 import '../cubit/expense_state.dart';
@@ -52,16 +53,9 @@ class SettingsPage extends StatelessWidget {
           const SizedBox(height: 12),
           _SettingsGroup(
             children: [
-              _SettingsTile(
-                icon: Icons.attach_money_rounded,
-                iconColor: AppColors.income,
-                title: 'Currency',
-                subtitle: AppConstants.currency,
-                onTap: () {
-                  // TODO: currency picker in future session
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(const SnackBar(content: Text('Coming soon')));
+              BlocBuilder<CurrencyCubit, CurrencyOption>(
+                builder: (context, selectedCurrency) {
+                  return _CurrencyTile(selectedCurrency: selectedCurrency);
                 },
               ),
               _SettingsDivider(),
@@ -461,6 +455,268 @@ class _SettingsTile extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _CurrencyTile extends StatelessWidget {
+  final CurrencyOption selectedCurrency;
+
+  const _CurrencyTile({required this.selectedCurrency});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _showCurrencyPicker(context),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              // Icon
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.income.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.attach_money_rounded,
+                  color: AppColors.income,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 14),
+
+              // Labels
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Currency', style: AppTextStyles.cardTitle),
+                    const SizedBox(height: 2),
+                    const Text(
+                      'Choose your preferred currency',
+                      style: AppTextStyles.bodySecondary,
+                    ),
+                  ],
+                ),
+              ),
+
+              // Current selection + chevron
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      selectedCurrency.display,
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(
+                    Icons.expand_more_rounded,
+                    color: AppColors.textSecondary,
+                    size: 20,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showCurrencyPicker(BuildContext context) {
+    // Capture cubit BEFORE entering bottom sheet
+    // Bottom sheet creates a new context that may not see providers
+    final currencyCubit = context.read<CurrencyCubit>();
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).cardColor,
+      isScrollControlled: true, // allows sheet to be taller
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) => _CurrencyPickerSheet(
+        selectedCurrency: selectedCurrency,
+        // Pass cubit directly — no BlocProvider needed
+        onSelect: (currency) {
+          currencyCubit.setCurrency(currency);
+        },
+      ),
+    );
+  }
+}
+
+class _CurrencyPickerSheet extends StatelessWidget {
+  final CurrencyOption selectedCurrency;
+  final void Function(CurrencyOption) onSelect;
+
+  const _CurrencyPickerSheet({
+    required this.selectedCurrency,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      // SafeArea handles bottom inset on devices with home indicator
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          // Handle
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.divider,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.income.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.attach_money_rounded,
+                    color: AppColors.income,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Select Currency',
+                  style: AppTextStyles.sectionTitle,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Scrollable currency list
+          ListView.separated(
+            // Shrink to content — no fixed height needed
+            shrinkWrap: true,
+            // Disable scroll on list — sheet handles scrolling
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(0, 8, 0, 16),
+            itemCount: CurrencyService.currencies.length,
+            separatorBuilder: (_, __) => Divider(
+              height: 1,
+              indent: 74,
+              endIndent: 20,
+              color: Theme.of(context).dividerColor,
+            ),
+            itemBuilder: (context, index) {
+              final currency = CurrencyService.currencies[index];
+              final isSelected = currency.code == selectedCurrency.code;
+
+              return Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    // Call callback with selected currency
+                    onSelect(currency);
+                    // Close the sheet
+                    Navigator.pop(context);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 14,
+                    ),
+                    child: Row(
+                      children: [
+                        // Currency symbol in circle
+                        Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppColors.primary.withOpacity(0.12)
+                                : Theme.of(context).scaffoldBackgroundColor,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Text(
+                              currency.symbol,
+                              style: TextStyle(
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : AppColors.textSecondary,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+
+                        // Currency name and code
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                currency.name,
+                                style: AppTextStyles.cardTitle.copyWith(
+                                  color: isSelected ? AppColors.primary : null,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                currency.code,
+                                style: AppTextStyles.bodySecondary,
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Checkmark for selected currency
+                        if (isSelected)
+                          const Icon(
+                            Icons.check_rounded,
+                            color: AppColors.primary,
+                            size: 20,
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }

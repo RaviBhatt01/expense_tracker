@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/currency_cubit.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../cubit/analytics_cubit.dart';
 import '../cubit/expense_cubit.dart';
@@ -339,6 +340,7 @@ class _SummaryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<CurrencyCubit>(); // rebuild when currency changes
     return Column(
       children: [
         Container(
@@ -380,6 +382,7 @@ class _IncomeVsExpenseCardState extends State<_IncomeVsExpenseCard> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<CurrencyCubit>(); // rebuild when currency changes
     // Find max value for Y axis scaling
     final maxValue = widget.comparisons.fold<double>(
       0,
@@ -610,6 +613,7 @@ class _WeeklyTrendCardState extends State<_WeeklyTrendCard> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<CurrencyCubit>(); // rebuild when currency changes
     final maxAmount = widget.dailySpending.fold<double>(
       0,
       (max, d) => d.amount > max ? d.amount : max,
@@ -812,6 +816,7 @@ class _SpendingByCategoryCardState extends State<_SpendingByCategoryCard> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<CurrencyCubit>(); // rebuild when currency changes
     if (widget.breakdown.isEmpty) {
       return _AnalyticsCard(
         title: 'Spending by Category',
@@ -977,6 +982,7 @@ class _CategoryListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<CurrencyCubit>(); // rebuild when currency changes
     final color = Color(item.colorValue);
 
     return Padding(

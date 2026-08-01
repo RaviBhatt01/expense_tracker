@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/currency_cubit.dart';
 import '../../../../core/utils/currency_formatter.dart';
 
 // Shows income and expense totals side by side
@@ -61,6 +63,7 @@ class _SummaryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<CurrencyCubit>(); // rebuild when currency changes
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(

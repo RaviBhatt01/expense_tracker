@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/currency_cubit.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../domain/entities/budget.dart';
 import '../cubit/budget_cubit.dart';
@@ -200,6 +201,7 @@ class _TotalBudgetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<CurrencyCubit>(); // rebuild when currency changes
     final remaining = totalBudget - totalSpent;
     final percentage = totalBudget > 0
         ? (totalSpent / totalBudget * 100).clamp(0.0, 100.0)
@@ -500,6 +502,7 @@ class _BudgetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<CurrencyCubit>(); // rebuild when currency changes
     final color = Color(item.categoryColorValue);
 
     return Container(

@@ -2,6 +2,7 @@ import 'package:expense_tracker/core/theme/app_theme.dart';
 import 'package:expense_tracker/core/theme/theme_cubit.dart';
 import 'package:expense_tracker/core/di/injection.dart';
 import 'package:expense_tracker/core/router/app_router.dart';
+import 'package:expense_tracker/core/utils/currency_service.dart';
 import 'package:expense_tracker/features/expenses/domain/usecases/get_expenses.dart';
 import 'package:expense_tracker/features/expenses/presentation/cubit/analytics_cubit.dart';
 import 'package:expense_tracker/features/expenses/presentation/cubit/category_cubit.dart';
@@ -10,6 +11,8 @@ import 'package:expense_tracker/features/onboarding/presentation/cubit/onboardin
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'core/theme/currency_cubit.dart';
+import 'core/utils/currency_formatter.dart';
 import 'features/expenses/domain/usecases/add_budget.dart';
 import 'features/expenses/domain/usecases/delete_budget.dart';
 import 'features/expenses/domain/usecases/get_budgets.dart';
@@ -28,6 +31,7 @@ class App extends StatelessWidget {
         // Theme cubit — controls dark/light mode
         BlocProvider(create: (context) => ThemeCubit()),
         BlocProvider(create: (context) => OnboardingCubit()),
+        BlocProvider(create: (context) => CurrencyCubit()..loadCurrency()),
         BlocProvider(
           lazy: false,
           create: (context) => getIt<CategoryCubit>()..initializeCategories(),
@@ -88,18 +92,24 @@ class App extends StatelessWidget {
           },
         ),
       ],
-      // BlocBuilder listens to ThemeCubit
-      // Rebuilds MaterialApp when theme changes
-      child: BlocBuilder<ThemeCubit, ThemeMode>(
-        builder: (context, themeMode) {
-          return MaterialApp.router(
-            title: 'SpendWise',
-            debugShowCheckedModeBanner: false,
-            // Apply correct theme based on cubit state
-            theme: AppTheme.light,
-            darkTheme: AppTheme.dark,
-            themeMode: themeMode,
-            routerConfig: _router.config(),
+      child: BlocBuilder<CurrencyCubit, CurrencyOption>(
+        // Rebuild entire app when currency changes
+        // This forces all widgets to use new symbol
+        builder: (context, currency) {
+          // Update formatter symbol on every rebuild
+          CurrencyFormatter.updateSymbol(currency.symbol);
+
+          return BlocBuilder<ThemeCubit, ThemeMode>(
+            builder: (context, themeMode) {
+              return MaterialApp.router(
+                title: 'SpendWise',
+                debugShowCheckedModeBanner: false,
+                theme: AppTheme.light,
+                darkTheme: AppTheme.dark,
+                themeMode: themeMode,
+                routerConfig: _router.config(),
+              );
+            },
           );
         },
       ),
