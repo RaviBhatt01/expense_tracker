@@ -13,6 +13,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'core/theme/currency_cubit.dart';
 import 'core/utils/currency_formatter.dart';
+import 'features/auth/presentation/cubit/auth_cubit.dart';
 import 'features/expenses/domain/usecases/add_budget.dart';
 import 'features/expenses/domain/usecases/delete_budget.dart';
 import 'features/expenses/domain/usecases/get_budgets.dart';
@@ -30,6 +31,7 @@ class App extends StatelessWidget {
       providers: [
         // Theme cubit — controls dark/light mode
         BlocProvider(create: (context) => ThemeCubit()),
+        BlocProvider(create: (context) => getIt<AuthCubit>()),
         BlocProvider(create: (context) => OnboardingCubit()),
         BlocProvider(create: (context) => CurrencyCubit()..loadCurrency()),
         BlocProvider(

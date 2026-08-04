@@ -13,6 +13,7 @@ import '../../features/expenses/presentation/pages/analytics_page.dart';
 import '../../features/expenses/presentation/pages/budgets_page.dart';
 import '../../features/expenses/presentation/pages/settings_page.dart';
 import '../../features/onboarding/presentation/pages/splash_page.dart';
+import '../../features/auth/presentation/pages/auth_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 
 // This annotation triggers auto_route code generation
@@ -25,6 +26,7 @@ class AppRouter extends RootStackRouter {
   List<AutoRoute> get routes => [
     // Splash is the first screen — initial: true
     AutoRoute(page: SplashRoute.page, initial: true),
+    AutoRoute(page: AuthRoute.page),
     AutoRoute(page: OnboardingRoute.page),
     AutoRoute(
       page: MainRoute.page,

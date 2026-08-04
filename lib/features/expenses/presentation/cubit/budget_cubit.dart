@@ -5,6 +5,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:collection/collection.dart';
 
 import '../../../../core/usecases/usecase.dart';
+import '../../../../core/utils/auth_helper.dart';
 import '../../domain/entities/budget.dart';
 import '../../domain/entities/expense.dart';
 import '../../domain/usecases/add_budget.dart';
@@ -136,6 +137,8 @@ class BudgetCubit extends Cubit<BudgetState> {
   Future<void> loadTotalBudget() async {
     try {
       final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(AuthHelper.userId)
           .collection('settings')
           .doc('monthly_budget')
           .get();
@@ -153,12 +156,13 @@ class BudgetCubit extends Cubit<BudgetState> {
   Future<void> setTotalBudget(double amount) async {
     try {
       await FirebaseFirestore.instance
+          .collection('users')
+          .doc(AuthHelper.userId)
           .collection('settings')
           .doc('monthly_budget')
           .set({'amount': amount});
 
       _totalMonthlyBudget = amount;
-      // Reload to refresh state
       await loadBudgets();
     } catch (e) {
       emit(BudgetState.error(message: e.toString()));

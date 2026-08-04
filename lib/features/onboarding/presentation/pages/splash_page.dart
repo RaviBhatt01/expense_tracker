@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../cubit/onboarding_cubit.dart';
+import '../../../auth/presentation/cubit/auth_cubit.dart';
 
 @RoutePage()
 class SplashPage extends StatefulWidget {
@@ -39,7 +39,7 @@ class _SplashPageState extends State<SplashPage>
     // Check first launch after animation plays
     Future.delayed(const Duration(milliseconds: 2500), () {
       if (mounted) {
-        context.read<OnboardingCubit>().checkFirstLaunch();
+        context.read<AuthCubit>().checkAuthStatus();
       }
     });
   }
@@ -52,14 +52,14 @@ class _SplashPageState extends State<SplashPage>
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<OnboardingCubit, OnboardingState>(
+    return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
-        if (state is OnboardingFirstLaunch) {
-          // First time — go to onboarding
-          context.router.replace(const OnboardingRoute());
-        } else if (state is OnboardingComplete) {
-          // Already used — go straight to home
+        if (state is AuthAuthenticated) {
+          // Already logged in → go to home
           context.router.replace(const MainRoute());
+        } else if (state is AuthUnauthenticated) {
+          // Not logged in → go to auth screen
+          context.router.replace(const AuthRoute());
         }
       },
       child: Scaffold(

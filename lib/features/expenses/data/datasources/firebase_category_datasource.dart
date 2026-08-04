@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:injectable/injectable.dart';
 
+import '../../../../core/utils/auth_helper.dart';
 import '../models/category_model.dart';
 import 'category_datasource.dart';
 
@@ -8,14 +9,16 @@ import 'category_datasource.dart';
 class FirebaseCategoryDatasource implements CategoryDatasource {
   final FirebaseFirestore _firestore;
 
-  // Firestore collection name for categories
-  static const String _collection = 'categories';
-
   FirebaseCategoryDatasource(this._firestore);
+
+  CollectionReference get _collection => _firestore
+      .collection('users')
+      .doc(AuthHelper.userId)
+      .collection('categories');
 
   @override
   Future<List<CategoryModel>> getCategories() async {
-    final snapshot = await _firestore.collection(_collection).get();
+    final snapshot = await _collection.get();
     return snapshot.docs
         .map((doc) => CategoryModel.fromFirestore(doc))
         .toList();
@@ -23,23 +26,18 @@ class FirebaseCategoryDatasource implements CategoryDatasource {
 
   @override
   Future<void> addCategory(CategoryModel category) async {
-    await _firestore
-        .collection(_collection)
-        .doc(category.id)
-        .set(category.toFirestore());
+    await _collection.doc(category.id).set(category.toFirestore());
   }
 
   @override
   Future<void> deleteCategory(String id) async {
-    await _firestore.collection(_collection).doc(id).delete();
+    await _collection.doc(id).delete();
   }
 
   @override
   Future<bool> categoriesExist() async {
     // Check if any categories exist — used to decide seeding
-    final snapshot = await _firestore
-        .collection(_collection)
-        .limit(1) // only fetch one document — efficient
+    final snapshot = await _collection.limit(1) // only fetch one document — efficient
         .get();
     return snapshot.docs.isNotEmpty;
   }
@@ -51,7 +49,7 @@ class FirebaseCategoryDatasource implements CategoryDatasource {
     final batch = _firestore.batch();
 
     for (final category in categories) {
-      final ref = _firestore.collection(_collection).doc(category.id);
+      final ref = _collection.doc(category.id);
       batch.set(ref, category.toFirestore());
     }
 

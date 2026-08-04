@@ -87,6 +87,22 @@ class AnalyticsRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [AuthPage]
+class AuthRoute extends PageRouteInfo<void> {
+  const AuthRoute({List<PageRouteInfo>? children})
+    : super(AuthRoute.name, initialChildren: children);
+
+  static const String name = 'AuthRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const AuthPage();
+    },
+  );
+}
+
+/// generated route for
 /// [BudgetsPage]
 class BudgetsRoute extends PageRouteInfo<void> {
   const BudgetsRoute({List<PageRouteInfo>? children})

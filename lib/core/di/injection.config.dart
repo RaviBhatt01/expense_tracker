@@ -11,6 +11,14 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:cloud_firestore/cloud_firestore.dart' as _i974;
 import 'package:expense_tracker/core/di/register_module.dart' as _i90;
+import 'package:expense_tracker/features/auth/data/datasources/auth_datasource.dart'
+    as _i1036;
+import 'package:expense_tracker/features/auth/data/repositories/auth_repository_impl.dart'
+    as _i338;
+import 'package:expense_tracker/features/auth/domain/repositories/auth_repository.dart'
+    as _i664;
+import 'package:expense_tracker/features/auth/presentation/cubit/auth_cubit.dart'
+    as _i440;
 import 'package:expense_tracker/features/expenses/data/datasources/budget_datasource.dart'
     as _i199;
 import 'package:expense_tracker/features/expenses/data/datasources/category_datasource.dart'
@@ -73,6 +81,7 @@ extension GetItInjectableX on _i174.GetIt {
     final gh = _i526.GetItHelper(this, environment, environmentFilter);
     final registerModule = _$RegisterModule();
     gh.lazySingleton<_i974.FirebaseFirestore>(() => registerModule.firestore);
+    gh.lazySingleton<_i1036.AuthDatasource>(() => _i1036.AuthDatasource());
     gh.lazySingleton<_i576.ExpenseDatasource>(
       () => _i153.FirebaseExpenseDatasource(gh<_i974.FirebaseFirestore>()),
     );
@@ -81,6 +90,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i199.BudgetDatasource>(
       () => _i1016.FirebaseBudgetDatasource(gh<_i974.FirebaseFirestore>()),
+    );
+    gh.lazySingleton<_i664.AuthRepository>(
+      () => _i338.AuthRepositoryImpl(datasource: gh<_i1036.AuthDatasource>()),
     );
     gh.lazySingleton<_i628.CategoryRepository>(
       () => _i1043.CategoryRepositoryImpl(
@@ -95,6 +107,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i706.BudgetRepository>(
       () =>
           _i847.BudgetRepositoryImpl(datasource: gh<_i199.BudgetDatasource>()),
+    );
+    gh.lazySingleton<_i440.AuthCubit>(
+      () => _i440.AuthCubit(repository: gh<_i664.AuthRepository>()),
     );
     gh.factory<_i608.AddBudgetUseCase>(
       () => _i608.AddBudgetUseCase(repository: gh<_i706.BudgetRepository>()),
