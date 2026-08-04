@@ -8,6 +8,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/currency_cubit.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../domain/entities/expense.dart';
 import '../cubit/analytics_cubit.dart';
 import '../cubit/category_cubit.dart';
@@ -170,7 +171,6 @@ class _HomeView extends StatelessWidget {
 class _HomeAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // Determine greeting based on time of day
     final hour = DateTime.now().hour;
     final greeting = hour < 12
         ? 'Good morning'
@@ -179,76 +179,163 @@ class _HomeAppBar extends StatelessWidget {
         : 'Good evening';
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 16, 8),
-      child: Row(
-        children: [
-          // ── Avatar ─────────────────────────────────
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [AppColors.primary, AppColors.primaryLight],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.person_rounded,
-              color: Colors.white,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 12),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+      child: BlocBuilder<AuthCubit, AuthState>(
+        builder: (context, state) {
+          final user = state is AuthAuthenticated ? state.user : null;
+          final displayName = user?.displayName?.isNotEmpty == true
+              ? user!.displayName!
+              : 'SpendWise User';
+          final initial = user?.displayName?.isNotEmpty == true
+              ? user!.displayName![0].toUpperCase()
+              : user?.email?.isNotEmpty == true
+              ? user!.email![0].toUpperCase()
+              : '?';
 
-          // ── Greeting + Name ─────────────────────────
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('$greeting 👋', style: AppTextStyles.bodySecondary),
-                const Text(
-                  'SpendWise', // will be replaced with user name after Auth
-                  style: AppTextStyles.cardTitle,
-                ),
-              ],
-            ),
-          ),
-
-          // ── Notification Icon ────────────────────────
-          // No navigation for now — placeholder for future
-          Stack(
+          return Row(
             children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_outlined),
-                onPressed: () {},
-                color: Theme.of(context).textTheme.bodyMedium?.color,
-              ),
-              // Notification dot
-              Positioned(
-                right: 8,
-                top: 8,
+              // ── Avatar ─────────────────────────────────
+              InkWell(
+                onTap: () => AutoTabsRouter.of(context).setActiveIndex(4),
+                borderRadius: BorderRadius.circular(24),
                 child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: AppColors.expense,
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [AppColors.primary, AppColors.primaryLight],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
                     shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withOpacity(0.35),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
+                  child: user?.photoUrl != null
+                      ? ClipOval(
+                          child: Image.network(
+                            user!.photoUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Center(
+                              child: Text(
+                                initial,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                      : Center(
+                          child: Text(
+                            initial,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                ),
+              ),
+              const SizedBox(width: 14),
+
+              // ── Greeting + Name ─────────────────────────
+              // ── Greeting + Name ─────────────────────────
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          greeting,
+                          style: AppTextStyles.body.copyWith(
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Text('👋', style: TextStyle(fontSize: 13)),
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      displayName,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -0.3,
+                        color: Theme.of(context).textTheme.titleLarge?.color,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // ── Action Icons (grouped pill) ─────────────
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        IconButton(
+                          icon: const Icon(
+                            Icons.notifications_outlined,
+                            size: 22,
+                          ),
+                          onPressed: () {},
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
+                        ),
+                        Positioned(
+                          right: 10,
+                          top: 10,
+                          child: Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: AppColors.expense,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Theme.of(context).cardColor,
+                                width: 1.5,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      width: 1,
+                      height: 20,
+                      color: Theme.of(context).dividerColor,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.more_vert_rounded, size: 22),
+                      onPressed: () {},
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                    ),
+                  ],
                 ),
               ),
             ],
-          ),
-
-          // ── Dot Menu ────────────────────────────────
-          // Placeholder for future actions
-          IconButton(
-            icon: const Icon(Icons.more_vert_rounded),
-            onPressed: () {},
-            color: Theme.of(context).textTheme.bodyMedium?.color,
-          ),
-        ],
+          );
+        },
       ),
     );
   }
