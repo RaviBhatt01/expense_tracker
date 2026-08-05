@@ -26,6 +26,10 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Create firebase_options.dart
+        # Recreate from GitHub Secret — needed here too, since main.dart imports it
+        run: echo '${{ secrets.FIREBASE_OPTIONS }}' > lib/firebase_options.dart
+
       - name: Run code generation
         run: dart run build_runner build --delete-conflicting-outputs
 
@@ -58,9 +62,6 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Run code generation
-        run: dart run build_runner build --delete-conflicting-outputs
-
       - name: Create google-services.json
         # Recreate from GitHub Secret — never commit this file
         run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > android/app/google-services.json
@@ -68,6 +69,9 @@ jobs:
       - name: Create firebase_options.dart
         # Recreate from GitHub Secret
         run: echo '${{ secrets.FIREBASE_OPTIONS }}' > lib/firebase_options.dart
+
+      - name: Run code generation
+        run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Build APK
         run: flutter build apk --release --no-tree-shake-icons
